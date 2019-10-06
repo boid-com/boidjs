@@ -1,0 +1,26 @@
+{
+  "name": "boidjs",
+  "version": "1.0.0",
+  "description": "Useful utility functions for interacting with Boid smart contracts",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Boid-John/boidjs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Boid-John/boidjs/issues"
+  },
+  "homepage": "https://github.com/Boid-John/boidjs#readme",
+  "dependencies": {
+    "eosjs": "^20.0.0",
+    "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "standard": "^14.3.1"
+  }
+}
