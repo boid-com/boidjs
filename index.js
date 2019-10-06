@@ -1,5 +1,4 @@
-function init (endpoints, keys, externalEOSJs) {
-  const { api, rpc } = require('./eosjs')(endpoints, keys, externalEOSJs)
+function init ({rpc,api}) {
   const get = require('./get')
   // const execute = require('./execute')
   get.init(rpc)

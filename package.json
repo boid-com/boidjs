@@ -1,6 +1,6 @@
 {
   "name": "boidjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Useful utility functions for interacting with Boid smart contracts",
   "main": "index.js",
   "scripts": {
@@ -19,8 +19,5 @@
   "dependencies": {
     "eosjs": "^20.0.0",
     "node-fetch": "^2.6.0"
-  },
-  "devDependencies": {
-    "standard": "^14.3.1"
   }
 }
