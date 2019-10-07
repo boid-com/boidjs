@@ -1,4 +1,4 @@
-function init ({rpc,api}) {
+function init ({ rpc, api }) {
   const get = require('./get')
   // const execute = require('./execute')
   get.init(rpc)

@@ -2,7 +2,7 @@
   "name": "boidjs",
   "version": "1.0.1",
   "description": "Useful utility functions for interacting with Boid smart contracts",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

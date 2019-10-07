@@ -6,7 +6,7 @@ function init (extRPC, extAPI, extTokenContract) {
   rpc = extRPC
   contract = extTokenContract || 'boidcomtoken'
 }
-async function get_accounts () {
+async function getAccounts () {
   try {
     let accts = []
     let res = await rpc.get_table_by_scope({
@@ -16,7 +16,7 @@ async function get_accounts () {
       limit: 10000000
     })
     accts = accts.concat(res.rows)
-    while (res.more != '' && res.more != false) {
+    while (res.more !== '' && res.more !== false) {
       res = await rpc.get_table_by_scope({
         json: true,
         code: contract,
@@ -26,9 +26,9 @@ async function get_accounts () {
       })
       accts = accts.concat(res.rows)
     }
-    let acctInfo = []
+    const acctInfo = []
     for (let i = 0; i < accts.length; i++) {
-      let x = await get_account({
+      const x = await getAccount({
         contract: contract,
         account: accts[i].scope
       })
@@ -41,18 +41,18 @@ async function get_accounts () {
   }
 }
 
-async function get_time () {
+async function getTime () {
   try {
-    let res = await rpc.get_info()
+    const res = await rpc.get_info()
     return ((new Date(res.head_block_time)).getTime()) / 1000
   } catch (error) {
     return undefined
   }
 }
 
-async function get_stats ({ contract }) {
+async function getStats () {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: 'BOID',
@@ -68,9 +68,9 @@ async function get_stats ({ contract }) {
   }
 }
 
-async function get_stake_config () {
+async function getStakeConfig () {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: contract,
@@ -87,9 +87,9 @@ async function get_stake_config () {
   }
 }
 
-async function get_account ({ account }) {
+async function getAccount ({ account }) {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: account,
@@ -99,8 +99,8 @@ async function get_account ({ account }) {
       reverse: false,
       show_payer: false
     })
-    let balance = parseFloat(res.rows[0].balance.split(' ')).toFixed(4)
-    let balanceStr = balance.toString() + ' BOID'
+    const balance = parseFloat(res.rows[0].balance.split(' ')).toFixed(4)
+    const balanceStr = balance.toString() + ' BOID'
     return {
       account: account,
       balance: parseFloat(balance),
@@ -111,11 +111,9 @@ async function get_account ({ account }) {
   }
 }
 
-
-
-async function get_stake ({ contract, from, to }) {
+async function getStake ({ from, to }) {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: to,
@@ -129,9 +127,9 @@ async function get_stake ({ contract, from, to }) {
   }
 }
 
-async function get_stakes ({ account }) {
+async function getStakes ({ account }) {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: account,
@@ -140,11 +138,13 @@ async function get_stakes ({ account }) {
     })
     return res.rows
   } catch (error) {
+    console.error(error)
+    throw(error)
     return undefined
   }
 }
 
-async function get_stakes_all ({ contract }) {
+async function getStakesAll () {
   try {
     let accts = []
     let res = await rpc.get_table_by_scope({
@@ -156,7 +156,7 @@ async function get_stakes_all ({ contract }) {
       lower_bound: 0
     })
     accts = accts.concat(res.rows)
-    while (res.more != '' && res.more != false) {
+    while (res.more !== '' && res.more !== false) {
       res = await rpc.get_table_by_scope({
         json: true,
         code: contract,
@@ -167,9 +167,9 @@ async function get_stakes_all ({ contract }) {
       })
       accts = accts.concat(res.rows)
     }
-    let acctInfo = []
+    const acctInfo = []
     for (let i = 0; i < accts.length; i++) {
-      let x = await get_stakes({
+      const x = await getStakes({
         contract: contract,
         account: accts[i].scope
       })
@@ -183,7 +183,7 @@ async function get_stakes_all ({ contract }) {
   }
 }
 
-async function get_stakes_by_delegate ({ contract }) {
+async function getStakesByDelegate () {
   try {
     let accts = []
     let res = await rpc.get_table_by_scope({
@@ -195,7 +195,7 @@ async function get_stakes_by_delegate ({ contract }) {
       lower_bound: 0
     })
     accts = accts.concat(res.rows)
-    while (res.more != '' && res.more != false) {
+    while (res.more !== '' && res.more !== false) {
       res = await rpc.get_table_by_scope({
         json: true,
         code: contract,
@@ -206,9 +206,9 @@ async function get_stakes_by_delegate ({ contract }) {
       })
       accts = accts.concat(res.rows)
     }
-    let acctInfo = []
+    const acctInfo = []
     for (let i = 0; i < accts.length; i++) {
-      let x = await get_stakes({
+      const x = await getStakes({
         contract: contract,
         account: accts[i].scope
       })
@@ -220,9 +220,9 @@ async function get_stakes_by_delegate ({ contract }) {
   }
 }
 
-async function get_power ({ account }) {
+async function getPower ({ account }) {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: account,
@@ -235,9 +235,9 @@ async function get_power ({ account }) {
   }
 }
 
-async function get_delegation ({ contract, from, to }) {
+async function getDelegation ({ from, to }) {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: from,
@@ -251,9 +251,9 @@ async function get_delegation ({ contract, from, to }) {
   }
 }
 
-async function get_delegations ({ contract, account }) {
+async function getDelegations ({ account }) {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: account,
@@ -266,7 +266,7 @@ async function get_delegations ({ contract, account }) {
   }
 }
 
-async function get_delegations_all ({ contract }) {
+async function getDelegationsAll () {
   try {
     let accts = []
     let res = await rpc.get_table_by_scope({
@@ -278,7 +278,7 @@ async function get_delegations_all ({ contract }) {
       lower_bound: 0
     })
     accts = accts.concat(res.rows)
-    while (res.more != '' && res.more != false) {
+    while (res.more !== '' && res.more !== false) {
       res = await rpc.get_table_by_scope({
         json: true,
         code: contract,
@@ -289,9 +289,9 @@ async function get_delegations_all ({ contract }) {
       })
       accts = accts.concat(res.rows)
     }
-    let acctInfo = []
+    const acctInfo = []
     for (let i = 0; i < accts.length; i++) {
-      let x = await get_delegations({
+      const x = await getDelegations({
         contract: contract,
         account: accts[i].scope
       })
@@ -306,9 +306,9 @@ async function get_delegations_all ({ contract }) {
   }
 }
 
-async function get_currency_stats ({ contract }) {
+async function getCurrencyStats () {
   try {
-    let res = await rpc.get_table_rows({
+    const res = await rpc.get_table_rows({
       json: true,
       code: contract,
       scope: 'BOID',
@@ -324,7 +324,7 @@ async function get_currency_stats ({ contract }) {
   }
 }
 
-async function do_action (
+async function doAction (
   account,
   name,
   authorization,
@@ -344,27 +344,21 @@ async function do_action (
   return result
 }
 
-async function get_abi ({ contract }) {
-  const res = await rpc.get_abi(contract)
-  return res
-}
-
 module.exports = {
   init,
-  do_action,
-  get_time,
-  get_stats,
-  get_stake_config,
-  get_account,
-  get_stake,
-  get_power,
-  get_delegation,
-  get_delegations,
-  get_delegations_all,
-  get_accounts,
-  get_stakes,
-  get_stakes_all,
-  get_stakes_by_delegate,
-  get_currency_stats,
-  get_abi
+  doAction,
+  getTime,
+  getStats,
+  getStakeConfig,
+  getAccount,
+  getStake,
+  getPower,
+  getDelegation,
+  getDelegations,
+  getDelegationsAll,
+  getAccounts,
+  getStakes,
+  getStakesAll,
+  getStakesByDelegate,
+  getCurrencyStats
 }

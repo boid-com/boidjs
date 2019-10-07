@@ -2,49 +2,9 @@
 const random = (min, max) => Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) + Math.ceil(min)
 const randomSelect = (arr) => arr[random(0, arr.length - 1)]
 
-let TIME_MULT = 1// 86400;
-let DAY_MICROSEC = 86400e6
-let PRECISION_COEF = 1e4
-
-Array.prototype.sortByProp = function (p) {
-  return this.sort(function (a, b) {
-    return (a[p] > b[p]) ? 1 : (a[p] < b[p]) ? -1 : 0
-  })
-}
-
-function linspace (start, end, n) {
-  let i = 2
-  let x = []
-  x.push(start)
-  let step = (end - start) / (n - 1)
-  let num = start + step
-  while (num <= end) {
-    x.push(num)
-    num += step
-    i += 1
-  }
-  while (i <= n) {
-    x.push(end)
-    i += 1
-  }
-  return x
-}
-
-function logspace (start, end, n, base = 10.0) {
-  x = linspace(start, end, n)
-  x = x.map(y => base ** y)
-  return x
-}
-
-function mapAccts (l1, bal, bp) {
-  m = new Map()
-  for (let i = 0; i < l1.length; i++) {
-    m[l1[i]] = {}
-    m[l1[i]]['balance'] = bal[i]
-    m[l1[i]]['boidpower'] = bp[i]
-  }
-  return m
-}
+const TIME_MULT = 1// 86400;
+const DAY_MICROSEC = 86400e6
+const PRECISION_COEF = 1e4
 
 function num2boid (n) {
   return n.toFixed(4) + ' BOID'
@@ -60,8 +20,8 @@ function getCurrentBoidpower ({
   dt
 }) {
   // return parseFloat(power.quantity);
-  let dtReal = dt * TIME_MULT
-  let quantity =
+  const dtReal = dt * TIME_MULT
+  const quantity =
     parseFloat(power.quantity) *
     Math.pow(1.0 - parseFloat(config.boidpower_decay_rate),
       dtReal) -
@@ -103,15 +63,15 @@ function getStakeBonus ({
   poweredStake,
   stakeDifficulty
 }) {
-  let amount = Math.min(
+  const amount = Math.min(
     quantity, poweredStake
   )
 
-  let wpfAmount = Math.max(
+  const wpfAmount = Math.max(
     quantity - poweredStake, 0
   )
 
-  let stakeCoef = (claimTime - startTime) *
+  const stakeCoef = (claimTime - startTime) *
     TIME_MULT / stakeDifficulty / PRECISION_COEF
 
   return {
@@ -130,15 +90,14 @@ function claimForStake ({
   stakeDifficulty
 }) {
   let claimTime, startTime
-  let payout
 
-  if (prevClaimTime == 0) {
+  if (prevClaimTime === 0) {
     startTime = currTime
   } else {
     startTime = prevClaimTime
   }
 
-  if (expiration == 0) {
+  if (expiration === 0) {
     claimTime = currTime
   } else if (expiration < currTime) {
     claimTime = expiration
@@ -162,7 +121,7 @@ function getPowerBonus ({
   startTime,
   claimTime
 }) {
-  let powerCoef = Math.min(
+  const powerCoef = Math.min(
     power / powerDifficulty,
     powerBonusMaxRate
   )
@@ -180,25 +139,25 @@ function getBonus ({
   stakes,
   t
 }) {
-  let dtPow = t - parseFloat(power.prev_bp_update_time._count)
-  currPower = getCurrentBoidpower({
+  const dtPow = t - parseFloat(power.prev_bp_update_time._count)
+  var currPower = getCurrentBoidpower({
     config: config,
     power: power,
     dt: dtPow
   })
   console.log('power: ', currPower)
 
-  poweredStake = getPoweredStake({
+  var poweredStake = getPoweredStake({
     config: config,
     power: currPower
   })
   console.log('powered stake: ', poweredStake)
 
-  let totalPayout = { stake: 0, power: 0, wpf: 0 }
+  const totalPayout = { stake: 0, power: 0, wpf: 0 }
 
   let currPayout = { stake: 0, power: 0, wpf: 0 }
   for (let i = 0; i < stakes.length; i++) {
-    currStake = parseStake(stakes[i])
+    var currStake = parseStake(stakes[i])
     if (currStake.quantity > 0) {
       currPayout = claimForStake({
         quantity: currStake.quantity,
@@ -258,9 +217,6 @@ function getBonus ({
 module.exports = {
   num2boid,
   boid2num,
-  linspace,
-  logspace,
-  mapAccts,
   getCurrentBoidpower,
   getPoweredStake,
   getBonus,
