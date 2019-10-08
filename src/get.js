@@ -31,24 +31,24 @@ async function pendingClaim (account) {
 async function wallet (account) {
   try {
     var wallet = {}
-    wallet.balance = (await queries.getAccount({account})).balance
-    wallet.stakes = (await queries.getStakes({account}))
+    wallet.balance = (await queries.getAccount({ account })).balance
+    wallet.stakes = (await queries.getStakes({ account }))
 
-    const selfStake = wallet.stakes.find( el => el.from === account )
+    const selfStake = wallet.stakes.find(el => el.from === account)
     wallet.selfStake = parseFloat(selfStake.quantity)
     wallet.selfTransStake = parseFloat(selfStake.trans_quantity)
     wallet.allSelfStake = wallet.selfStake + wallet.selfTransStake
 
-    const externalStakes = wallet.stakes.filter( el => el.from != account )
-    wallet.externalStake = externalStakes.reduce((acc,el) => acc + parseFloat(el.quantity) ,0)
-    wallet.externalTransStake = externalStakes.reduce((acc,el) => acc + parseFloat(el.trans_quantity) ,0)
+    const externalStakes = wallet.stakes.filter(el => el.from !== account)
+    wallet.externalStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.quantity), 0)
+    wallet.externalTransStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.trans_quantity), 0)
     wallet.totalStake = wallet.selfStake + wallet.externalStake
     wallet.totalTransStake = wallet.selfTransStake + wallet.externalTransStake
     wallet.allStaked = wallet.totalStake + wallet.totalTransStake
 
-    wallet.delegations = (await queries.getDelegations({account})).filter(el => el.to != account)
-    wallet.totalDelegating = wallet.delegations.reduce((acc,el) => acc + parseFloat(el.quantity) ,0)
-    wallet.totalTransDelegating = wallet.delegations.reduce((acc,el) => acc + parseFloat(el.trans_quantity) ,0)
+    wallet.delegations = (await queries.getDelegations({ account })).filter(el => el.to !== account)
+    wallet.totalDelegating = wallet.delegations.reduce((acc, el) => acc + parseFloat(el.quantity), 0)
+    wallet.totalTransDelegating = wallet.delegations.reduce((acc, el) => acc + parseFloat(el.trans_quantity), 0)
     wallet.allDelegating = wallet.totalDelegating + wallet.totalTransDelegating
 
     wallet.liquidBalance = wallet.balance - wallet.allSelfStake - wallet.allDelegating
@@ -57,7 +57,6 @@ async function wallet (account) {
   } catch (error) {
     console.error(error)
   }
-
 }
 
 module.exports = { init, pendingClaim, wallet, queries }

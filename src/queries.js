@@ -1,8 +1,6 @@
-var api
 var rpc
 var contract
-function init (extRPC, extAPI, extTokenContract) {
-  api = extAPI
+function init (extRPC, extTokenContract) {
   rpc = extRPC
   contract = extTokenContract || 'boidcomtoken'
 }
@@ -139,8 +137,7 @@ async function getStakes ({ account }) {
     return res.rows
   } catch (error) {
     console.error(error)
-    throw(error)
-    return undefined
+    throw (error)
   }
 }
 
@@ -324,29 +321,8 @@ async function getCurrencyStats () {
   }
 }
 
-async function doAction (
-  account,
-  name,
-  authorization,
-  data
-) {
-  const result = await api.transact({
-    actions: [{
-      account: account,
-      name: name,
-      authorization: authorization,
-      data: data
-    }]
-  }, {
-    blocksBehind: 3,
-    expireSeconds: 30
-  })
-  return result
-}
-
 module.exports = {
   init,
-  doAction,
   getTime,
   getStats,
   getStakeConfig,
