@@ -1,8 +1,10 @@
 function maketx (
-{  account,
-  name,
-  authorization,
-  data}
+  {
+    account,
+    name,
+    authorization,
+    data
+  }
 ) {
   return {
     actions: [{
