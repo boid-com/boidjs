@@ -19,7 +19,7 @@ const tapos =
   expireSeconds: 30
 }
 
-claim (auth, data) {
+function claim (auth, data) {
   if (!data) data = 0
   return maketx({
     account: 'boidcomtoken',
@@ -30,5 +30,3 @@ claim (auth, data) {
 }
 
 module.exports = { maketx, claim, tapos }
-
-console.log(JSON.stringify(basic.claim({accountName:"johnatboid11",permission:"penis"})))
