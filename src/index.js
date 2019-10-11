@@ -1,9 +1,10 @@
 function init ({ rpc, api }) {
+  global.boidjs = {}
+  global.boidjs.rpc = rpc
+  global.boidjs.api = api
+  global.boidjs.queries = require('./queries')
   const get = require('./get')
   const tx = require('./tx')
-  // const execute = require('./execute')
-  get.init(rpc)
-  // execute.init(rpc,api,get)
   return { get, tx }
 }
 

@@ -17,8 +17,8 @@ function maketx (
 }
 const tapos =
 {
-  blocksBehind: 3,
-  expireSeconds: 30
+  blocksBehind: 6,
+  expireSeconds: 60
 }
 
 function claim (auth, data) {

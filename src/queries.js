@@ -1,9 +1,5 @@
-var rpc
-var contract
-function init (extRPC, extTokenContract) {
-  rpc = extRPC
-  contract = extTokenContract || 'boidcomtoken'
-}
+var rpc =  global.boidjs.rpc
+var contract = 'boidcomtoken'
 async function getAccounts () {
   try {
     let accts = []
@@ -322,7 +318,6 @@ async function getCurrencyStats () {
 }
 
 module.exports = {
-  init,
   getTime,
   getStats,
   getStakeConfig,
