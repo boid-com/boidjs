@@ -11,7 +11,7 @@ function maketx (
     actions: [{
       account,
       name,
-      authorization:[{ actor: auth.accountName, permission: auth.permission }],
+      authorization: [{ actor: auth.accountName, permission: auth.permission }],
       data
     }]
   }
@@ -25,22 +25,44 @@ const tapos =
 function claim (auth, data) {
   if (!data) data = 0
   return maketx({
-    account, name: 'claim', auth,
+    account,
+    name: 'claim',
+    auth,
     data: { stake_account: auth.accountName, percentage_to_stake: data, issuer_claim: false }
   })
 }
 
 function selfStake (auth, data) {
   return maketx({
-        account, name: 'stake', auth, 
-      data:{
-        from: auth.accountName,
-        to: auth.accountName,
-        quantity: data.toFixed(4) + " BOID",
-        time_limit:0,
-        use_staked_balance:false
-      }
+    account,
+    name: 'stake',
+    auth,
+    data: {
+      from: auth.accountName,
+      to: auth.accountName,
+      quantity: data.toFixed(4) + ' BOID',
+      time_limit: 0,
+      use_staked_balance: false
+    }
   })
 }
 
-module.exports = { maketx, claim, tapos, selfStake }
+function selfUnstake (auth, data) {
+  return maketx({
+    account,
+    name: 'unstake',
+    auth,
+    data: {
+      from: auth.accountName,
+      to: auth.accountName,
+      time_limit: 0,
+      to_staked_balance: false,
+      issuer_unstake: false,
+      transfer: false,
+      quantity: data.toFixed(4) + ' BOID',
+      use_staked_balance: false
+    }
+  })
+}
+
+module.exports = { maketx, claim, tapos, selfStake, selfUnstake }

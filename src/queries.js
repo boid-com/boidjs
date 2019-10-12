@@ -1,4 +1,4 @@
-var rpc =  global.boidjs.rpc
+var rpc = global.boidjs.rpc
 var contract = 'boidcomtoken'
 async function getAccounts () {
   try {

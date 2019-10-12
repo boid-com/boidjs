@@ -1,23 +1,22 @@
 
 const queries = global.boidjs.queries
 module.exports = async function wallet (account) {
-
   var wallet = {
-    balance:0,
-    stakes:[],
-    selfStake:0,
-    selfTransStake:0,
-    allSelfStake:0,
-    externalStake:0,
-    externalTransStake:0,
-    totalStake:0,
-    totalTransStake:0,
-    allStaked:0,
-    delegations:[],
-    totalDelegating:0,
-    totalTransDelegating:0,
-    allDelegating:0,
-    liquidBalance:0
+    balance: 0,
+    stakes: [],
+    selfStake: 0,
+    selfTransStake: 0,
+    allSelfStake: 0,
+    externalStake: 0,
+    externalTransStake: 0,
+    totalStake: 0,
+    totalTransStake: 0,
+    allStaked: 0,
+    delegations: [],
+    totalDelegating: 0,
+    totalTransDelegating: 0,
+    allDelegating: 0,
+    liquidBalance: 0
   }
 
   try {
