@@ -1,17 +1,18 @@
+var account = 'boidcomtoken'
 function maketx (
   {
     account,
     name,
-    authorization,
+    auth,
     data
   }
 ) {
   return {
     actions: [{
-      account: account,
-      name: name,
-      authorization: authorization,
-      data: data
+      account,
+      name,
+      authorization:[{ actor: auth.accountName, permission: auth.permission }],
+      data
     }]
   }
 }
@@ -24,11 +25,22 @@ const tapos =
 function claim (auth, data) {
   if (!data) data = 0
   return maketx({
-    account: 'boidcomtoken',
-    name: 'claim',
-    authorization: [{ actor: auth.accountName, permission: auth.permission }],
+    account, name: 'claim', auth,
     data: { stake_account: auth.accountName, percentage_to_stake: data, issuer_claim: false }
   })
 }
 
-module.exports = { maketx, claim, tapos }
+function selfStake (auth, data) {
+  return maketx({
+        account, name: 'stake', auth, 
+      data:{
+        from: auth.accountName,
+        to: auth.accountName,
+        quantity: data.toFixed(4) + " BOID",
+        time_limit:0,
+        use_staked_balance:false
+      }
+  })
+}
+
+module.exports = { maketx, claim, tapos, selfStake }
