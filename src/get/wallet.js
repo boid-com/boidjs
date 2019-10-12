@@ -24,10 +24,12 @@ module.exports = async function wallet (account) {
     wallet.stakes = (await queries.getStakes({ account }))
 
     const selfStake = wallet.stakes.find(el => el.from === account)
-    wallet.selfStake = parseFloat(selfStake.quantity)
-    wallet.selfTransStake = parseFloat(selfStake.trans_quantity)
-    wallet.allSelfStake = wallet.selfStake + wallet.selfTransStake
-
+    if (selfStake) {
+      wallet.selfStake = parseFloat(selfStake.quantity)
+      wallet.selfTransStake = parseFloat(selfStake.trans_quantity)
+      wallet.allSelfStake = wallet.selfStake + wallet.selfTransStake
+    }
+    
     const externalStakes = wallet.stakes.filter(el => el.from !== account)
     wallet.externalStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.quantity), 0)
     wallet.externalTransStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.trans_quantity), 0)
