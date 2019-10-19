@@ -1,5 +1,6 @@
 var rpc = global.boidjs.rpc
 var contract = 'boidcomtoken'
+// var contract = '1155testtest' // kylin
 async function getAccounts () {
   try {
     let accts = []

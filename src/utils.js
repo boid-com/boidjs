@@ -1,17 +1,19 @@
+const BigNumber = require('bignumber.js')
+BigNumber.config({ POW_PRECISION: 100 })
 
 const random = (min, max) => Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) + Math.ceil(min)
 const randomSelect = (arr) => arr[random(0, arr.length - 1)]
 
-const TIME_MULT = 1// 86400;
-const DAY_MICROSEC = 86400e6
-const PRECISION_COEF = 1e4
+const TIME_MULT = BigNumber(1)// BigNumber(86400)
+const DAY_MICROSEC = BigNumber(86400e6)
+const PRECISION_COEF = BigNumber(1e4)
 
 function num2boid (n) {
   return n.toFixed(4) + ' BOID'
 }
 
 function boid2num (s) {
-  return parseFloat(s.split(' '))
+  return BigNumber(parseFloat(s.split(' ')))
 }
 
 function getCurrentBoidpower ({
@@ -19,40 +21,55 @@ function getCurrentBoidpower ({
   power,
   dt
 }) {
-  // return parseFloat(power.quantity);
-  const dtReal = dt * TIME_MULT
-  const quantity =
-    parseFloat(power.quantity) *
-    Math.pow(1.0 - parseFloat(config.boidpower_decay_rate),
-      dtReal) -
-    dtReal / DAY_MICROSEC * TIME_MULT *
-    parseFloat(config.boidpower_const_decay)
+  const bpPrev = BigNumber(parseFloat(power.quantity))
+  const bpNew = BigNumber(0)
+  const dtReal = BigNumber(dt).multipliedBy(TIME_MULT)
+  let quantity =
+    bpPrev.multipliedBy((BigNumber(1.0).minus(
+      BigNumber(parseFloat(config.boidpower_decay_rate))))
+      .exponentiatedBy(dtReal))
+    .minus(
+      dtReal
+      .dividedBy(DAY_MICROSEC)
+      .multipliedBy(TIME_MULT)
+      .multipliedBy(
+        BigNumber(parseFloat(config.boidpower_const_decay))
+      )
+    )
 
-  return Math.max(quantity, 0) +
-    Math.pow(0,
-      parseFloat(1 - config.boidpower_update_exp))
+  quantity = BigNumber.maximum(quantity, 0)
+    .plus(
+      bpNew.multipliedBy(
+        BigNumber(config.boidpower_update_mult))
+    )
+
+  return quantity
 }
 
 function getPoweredStake ({
   config,
   power
 }) {
-  return Math.min(
-    parseFloat(config.powered_stake_multiplier) *
-    power,
-    parseFloat(config.max_powered_stake_ratio) *
-    parseFloat(config.total_staked)
+  return BigNumber.minimum(
+    BigNumber(
+      parseFloat(config.powered_stake_multiplier))
+    .multipliedBy(BigNumber(power)),
+    BigNumber(
+      parseFloat(config.max_powered_stake_ratio))
+    .multipliedBy(
+      BigNumber(parseFloat(config.total_staked))
+    )
   )
 }
 
 function parseStake (stake) {
   return {
     quantity: boid2num(stake.quantity),
-    prev_claim_time: parseFloat(stake.prev_claim_time._count),
-    expiration: parseFloat(stake.expiration._count),
+    prev_claim_time: BigNumber(parseFloat(stake.prev_claim_time._count)),
+    expiration: BigNumber(parseFloat(stake.expiration._count)),
     trans_quantity: boid2num(stake.trans_quantity),
-    trans_prev_claim_time: parseFloat(stake.trans_prev_claim_time._count),
-    trans_expiration: parseFloat(stake.trans_expiration._count)
+    trans_prev_claim_time: BigNumber(parseFloat(stake.trans_prev_claim_time._count)),
+    trans_expiration: BigNumber(parseFloat(stake.trans_expiration._count))
   }
 }
 
@@ -63,21 +80,27 @@ function getStakeBonus ({
   poweredStake,
   stakeDifficulty
 }) {
-  const amount = Math.min(
+  const amount = BigNumber.minimum(
     quantity, poweredStake
   )
 
-  const wpfAmount = Math.max(
-    quantity - poweredStake, 0
+  const wpfAmount = BigNumber.maximum(
+    BigNumber(quantity).minus(poweredStake),
+    0
   )
 
-  const stakeCoef = (claimTime - startTime) *
-    TIME_MULT / stakeDifficulty / PRECISION_COEF
+  const stakeCoef =
+    BigNumber(claimTime).minus(startTime)
+    .multipliedBy(
+      TIME_MULT
+      .dividedBy(stakeDifficulty)
+      .dividedBy(PRECISION_COEF)
+    )
 
   return {
-    stake: amount * stakeCoef,
-    power: 0,
-    wpf: wpfAmount * stakeCoef
+    stake: amount.multipliedBy(stakeCoef),
+    power: BigNumber(0),
+    wpf: wpfAmount.multipliedBy(stakeCoef)
   }
 }
 
@@ -91,15 +114,15 @@ function claimForStake ({
 }) {
   let claimTime, startTime
 
-  if (prevClaimTime === 0) {
+  if (prevClaimTime.isEqualTo(0)) {
     startTime = currTime
   } else {
     startTime = prevClaimTime
   }
 
-  if (expiration === 0) {
+  if (expiration.isEqualTo(0)) {
     claimTime = currTime
-  } else if (expiration < currTime) {
+  } else if (expiration.isLessThan(currTime)) {
     claimTime = expiration
   } else {
     claimTime = currTime
@@ -121,15 +144,21 @@ function getPowerBonus ({
   startTime,
   claimTime
 }) {
-  const powerCoef = Math.min(
-    power / powerDifficulty,
+  const powerCoef = BigNumber.minimum(
+    BigNumber(power).dividedBy(powerDifficulty),
     powerBonusMaxRate
   )
 
+  const quantity = BigNumber(powerCoef)
+    .multipliedBy(
+      BigNumber(claimTime).minus(startTime))
+    .multipliedBy(TIME_MULT)
+    .dividedBy(PRECISION_COEF)
+
   return {
-    stake: 0,
-    power: powerCoef * (claimTime - startTime) * TIME_MULT / PRECISION_COEF,
-    wpf: 0
+    stake: BigNumber(0),
+    power: quantity,
+    wpf: BigNumber(0)
   }
 }
 
@@ -139,23 +168,36 @@ function getBonus ({
   stakes,
   t
 }) {
-  const dtPow = t - parseFloat(power.prev_bp_update_time._count)
+  const dtPow = BigNumber(t)
+    .minus(BigNumber(parseFloat(power.prev_bp_update_time._count)))
   var currPower = getCurrentBoidpower({
     config: config,
     power: power,
     dt: dtPow
   })
-  console.log('power: ', currPower)
+  console.log('power: ',
+    currPower.toFixed(5).toString()
+  )
 
   var poweredStake = getPoweredStake({
     config: config,
     power: currPower
   })
-  console.log('powered stake: ', poweredStake)
+  console.log('powered stake: ',
+    poweredStake.toFixed(5).toString()
+  )
 
-  const totalPayout = { stake: 0, power: 0, wpf: 0 }
+  const totalPayout = {
+    stake: BigNumber(0),
+    power: BigNumber(0),
+    wpf: BigNumber(0)
+  }
 
-  let currPayout = { stake: 0, power: 0, wpf: 0 }
+  let currPayout = {
+    stake: BigNumber(0),
+    power: BigNumber(0),
+    wpf: BigNumber(0)
+  }
   for (let i = 0; i < stakes.length; i++) {
     var currStake = parseStake(stakes[i])
     if (currStake.quantity > 0) {
@@ -165,14 +207,19 @@ function getBonus ({
         prevClaimTime: currStake.prev_claim_time,
         currTime: t,
         expiration: currStake.expiration,
-        stakeDifficulty: parseFloat(config.stake_difficulty)
+        stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty))
       })
-      console.log('stake payout: ', currPayout)
+      console.log('stake payout: ',
+        currPayout.stake.toFixed(4).toString()
+      )
+      console.log('stake wpf payout: ',
+        currPayout.wpf.toFixed(4).toString()
+      )
 
-      totalPayout.stake += currPayout.stake
-      totalPayout.wpf += currPayout.wpf
-      poweredStake = Math.max(
-        poweredStake - currStake.quantity,
+      totalPayout.stake = totalPayout.stake.plus(currPayout.stake)
+      totalPayout.wpf = totalPayout.wpf.plus(currPayout.wpf)
+      poweredStake = BigNumber.maximum(
+        BigNumber(poweredStake).minus(currStake.quantity),
         0
       )
     }
@@ -185,17 +232,23 @@ function getBonus ({
         currTime: t,
         expiration: currStake.trans_expiration
       })
-      console.log('trans stake payout: ', currPayout)
+      console.log('trans stake payout: ',
+        currPayout.stake.toFixed(4).toString()
+      )
+      console.log('trans stake wpf payout: ',
+        currPayout.wpf.toFixed(4).toString()
+      )
 
-      totalPayout.stake += currPayout.stake
-      totalPayout.wpf += currPayout.wpf
-      poweredStake = Math.max(
-        poweredStake - currStake.trans_quantity,
+      totalPayout.stake = totalPayout.stake.plus(currPayout.stake)
+      totalPayout.wpf = totalPayout.wpf.plus(currPayout.wpf)
+      poweredStake = BigNumber.maximum(
+        BigNumber(poweredStake)
+        .minus(currStake.trans_quantity),
         0
       )
     }
 
-    totalPayout.wpf = Math.min(
+    totalPayout.wpf = BigNumber.minimum(
       totalPayout.wpf,
       boid2num(config.max_wpf_payout)
     )
@@ -203,14 +256,83 @@ function getBonus ({
 
   currPayout = getPowerBonus({
     power: currPower,
-    powerDifficulty: parseFloat(config.power_difficulty),
-    powerBonusMaxRate: parseFloat(config.power_bonus_max_rate),
-    startTime: parseFloat(power.prev_claim_time._count),
+    powerDifficulty: BigNumber(parseFloat(config.power_difficulty)),
+    powerBonusMaxRate: BigNumber(parseFloat(config.power_bonus_max_rate)),
+    startTime: BigNumber(parseFloat(power.prev_claim_time._count)),
     claimTime: t
   })
-  console.log('power payout: ', currPayout)
+  console.log('power payout: ',
+    currPayout.power.toFixed(4).toString()
+  )
 
-  totalPayout.power += currPayout.power
+  totalPayout.power = totalPayout.power.plus(currPayout.power)
+  return totalPayout
+}
+
+function simulateStakeBonus ({
+  config,
+  power,
+  quantity,
+  t,
+  dt
+}) {
+  var currPower = BigNumber(power)
+  var prevTime = BigNumber(t).minus(dt)
+  var expireTime = BigNumber(t).plus(1)
+
+  var poweredStake = getPoweredStake({
+    config: config,
+    power: currPower
+  })
+  console.log('powered stake: ',
+    poweredStake.toString()
+  )
+
+  let totalPayout = {
+    stake: BigNumber(0),
+    power: BigNumber(0),
+    wpf: BigNumber(0)
+  }
+
+  if (quantity > 0) {
+    totalPayout = claimForStake({
+      quantity: quantity,
+      poweredStake: poweredStake,
+      prevClaimTime: prevTime,
+      currTime: t,
+      expiration: expireTime,
+      stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty))
+    })
+    console.log('simulated stake payout: ',
+      totalPayout.stake.toFixed(4).toString()
+    )
+    console.log('simulated stake wpf payout: ',
+      totalPayout.wpf.toFixed(4).toString()
+    )
+  }
+  return totalPayout
+}
+
+function simulatePowerBonus ({
+  config,
+  power,
+  t,
+  dt
+}) {
+  var currPower = BigNumber(power)
+  var prevTime = BigNumber(t).minus(dt)
+
+  const totalPayout = getPowerBonus({
+    power: currPower,
+    powerDifficulty: BigNumber(parseFloat(config.power_difficulty)),
+    powerBonusMaxRate: BigNumber(parseFloat(config.power_bonus_max_rate)),
+    startTime: prevTime,
+    claimTime: t
+  })
+  console.log('simulated power payout: ',
+    totalPayout.power.toFixed(4).toString()
+  )
+
   return totalPayout
 }
 
@@ -220,6 +342,8 @@ module.exports = {
   getCurrentBoidpower,
   getPoweredStake,
   getBonus,
+  simulateStakeBonus,
+  simulatePowerBonus,
   random,
   randomSelect
 }

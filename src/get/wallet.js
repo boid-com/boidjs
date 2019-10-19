@@ -29,7 +29,6 @@ module.exports = async function wallet (account) {
       wallet.selfTransStake = parseFloat(selfStake.trans_quantity)
       wallet.allSelfStake = wallet.selfStake + wallet.selfTransStake
     }
-    
     const externalStakes = wallet.stakes.filter(el => el.from !== account)
     wallet.externalStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.quantity), 0)
     wallet.externalTransStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.trans_quantity), 0)
