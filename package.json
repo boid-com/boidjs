@@ -1,6 +1,6 @@
 {
   "name": "boidjs",
-  "version": "1.0.71",
+  "version": "1.0.8",
   "description": "Useful utility functions for interacting with Boid smart contracts",
   "main": "src/index.js",
   "scripts": {
