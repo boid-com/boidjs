@@ -54,6 +54,9 @@ async function wallet (account) {
     wallet.balance = (await balance(account))
     wallet.stakes = (await stakes(account))
     wallet.powerStats = await powerStats(account)
+    if (wallet.powerStats) {
+      wallet.powerStats.lastClaimTime = parseFloat(wallet.powerStats.prev_claim_time._count) / 10000
+    }
     const selfStake = wallet.stakes.find(el => el.from === account)
     if (selfStake) {
       wallet.selfStake = parseFloat(selfStake.quantity)
@@ -72,8 +75,9 @@ async function wallet (account) {
     wallet.totalDelegating = wallet.delegations.reduce((acc, el) => acc + parseFloat(el.quantity), 0)
     wallet.totalTransDelegating = wallet.delegations.reduce((acc, el) => acc + parseFloat(el.trans_quantity), 0)
     wallet.allDelegating = wallet.totalDelegating + wallet.totalTransDelegating
-
-    wallet.liquidBalance = wallet.balance - wallet.allSelfStake - wallet.allDelegating
+    
+    if (wallet.balance) wallet.liquidBalance = wallet.balance - wallet.allSelfStake - wallet.allDelegating
+    else wallet.liquidBalance = 0
 
     return wallet
   } catch (error) {
@@ -89,7 +93,7 @@ async function allAccounts () {
       json: true,
       code: contract,
       table: 'accounts',
-      limit: 10000000
+      limit: 10
     })
     accts = accts.concat(res.rows)
     while (res.more !== '' && res.more !== false) {
@@ -97,16 +101,14 @@ async function allAccounts () {
         json: true,
         code: contract,
         table: 'accounts',
-        limit: 10000000,
+        limit: 10,
         lower_bound: res.rows[res.rows.length - 1].scope + 1
       })
       accts = accts.concat(res.rows)
     }
     const acctInfo = []
     for (let i = 0; i < accts.length; i++) {
-      const x = await balance({
-        account: accts[i].scope
-      })
+      const x = await balance(accts[i].scope)
       acctInfo.push(x)
     }
     return acctInfo
@@ -174,7 +176,7 @@ async function balance (account) {
       reverse: false,
       show_payer: false
     })
-    console.log(res)
+    if (!res.rows[0]) return null
     return parseFloat(res.rows[0].balance)
   } catch (error) {
     console.log(error)
@@ -194,6 +196,7 @@ async function stake (to, from) {
     })
     return res.rows[0]
   } catch (error) {
+    console.log(error)
     return undefined
   }
 }
@@ -215,26 +218,28 @@ async function stakes (account) {
 }
 
 async function allStakes () {
+  let res
   try {
     let accts = []
-    let res = await rpc.get_table_by_scope({
+    res = await rpc.get_table_by_scope({
       json: true,
       code: contract,
       table: 'staked',
-      limit: 10000000,
+      limit: 1,
       // limit: 1,
       lower_bound: 0
     })
     accts = accts.concat(res.rows)
-    while (res.more !== '' && res.more !== false) {
+    while (res.more !== '' && res.more !== false && res.rows[0]) {
       res = await rpc.get_table_by_scope({
         json: true,
         code: contract,
         table: 'staked',
-        limit: 10000000,
+        limit: 1,
         // limit: 1,
         lower_bound: res.rows[res.rows.length - 1].scope + 1
       })
+      // console.log(res.rows)
       accts = accts.concat(res.rows)
     }
     const acctInfo = []
@@ -246,8 +251,60 @@ async function allStakes () {
     }
     return acctInfo
   } catch (error) {
+    console.log(res)
+    console.log(error)
     return undefined
   }
+}
+
+async function getStakesAsync(em, chunkSize){
+  let res
+  try {
+    let accts = []
+    let acctInfo = []
+    res = await rpc.get_table_by_scope({
+      json: true,
+      code: contract,
+      table: 'staked',
+      limit: chunkSize,
+      // limit: 1,
+      lower_bound: 0
+    })
+    accts = accts.concat(res.rows)
+    while (res.more !== '' && res.more !== false && res.rows[0]) {
+      res = await rpc.get_table_by_scope({
+        json: true,
+        code: contract,
+        table: 'staked',
+        limit: chunkSize,
+        // limit: 1,
+        lower_bound: res.rows[res.rows.length - 1].scope + 1
+      })
+      // console.log(res.rows)
+      accts = accts.concat(res.rows)
+      acctInfo = []
+      for (account of res.rows) {
+        const accountStakes = await stakes(account.scope)
+        for (stake of accountStakes) {
+          acctInfo.push(stake)
+        }
+      }
+      em.emit('list', acctInfo)
+    }
+    return 
+  } catch (error) {
+    console.log(res)
+    console.log(error)
+    return undefined
+  }
+}
+
+async function allStakesAsync (chunkSize) {
+  if (!chunkSize) chunkSize = 5
+  var events = require('events')
+  var em = new events.EventEmitter()
+  getStakesAsync(em,chunkSize)
+  return em
 }
 
 async function stakesByDelegate () {
@@ -257,17 +314,17 @@ async function stakesByDelegate () {
       json: true,
       code: contract,
       table: 'staked',
-      limit: 10000000,
+      limit: 10,
       // limit: 1,
       lower_bound: 0
     })
     accts = accts.concat(res.rows)
-    while (res.more !== '' && res.more !== false) {
+    while (res.more !== '' && res.more !== false && res.rows[0]) {
       res = await rpc.get_table_by_scope({
         json: true,
         code: contract,
         table: 'staked',
-        limit: 10000000,
+        limit: 10,
         // limit: 1,
         lower_bound: res.rows[res.rows.length - 1].scope + 1
       })
@@ -276,6 +333,40 @@ async function stakesByDelegate () {
     const acctInfo = []
     for (let i = 0; i < accts.length; i++) {
       const x = await stakes(accts[i].scope)
+      acctInfo.push(x)
+    }
+    return acctInfo
+  } catch (error) {
+    return undefined
+  }
+}
+
+async function allPowerStats () {
+  try {
+    let accts = []
+    let res = await rpc.get_table_by_scope({
+      json: true,
+      code: contract,
+      table: 'powers',
+      limit: 10,
+      // limit: 1,
+      lower_bound: 0
+    })
+    accts = accts.concat(res.rows)
+    while (res.more !== '' && res.more !== false && res.rows[0]) {
+      res = await rpc.get_table_by_scope({
+        json: true,
+        code: contract,
+        table: 'powers',
+        limit: 10,
+        // limit: 1,
+        lower_bound: res.rows[res.rows.length - 1].scope + 1
+      })
+      accts = accts.concat(res.rows)
+    }
+    const acctInfo = []
+    for (let i = 0; i < accts.length; i++) {
+      const x = await powerStats(accts[i].scope)
       acctInfo.push(x)
     }
     return acctInfo
@@ -338,7 +429,7 @@ async function allDelegations () {
       code: contract,
       table: 'delegation',
       // limit: 10000000
-      limit: 1,
+      limit: 10,
       lower_bound: 0
     })
     accts = accts.concat(res.rows)
@@ -348,7 +439,7 @@ async function allDelegations () {
         code: contract,
         table: 'delegation',
         // limit: 10000000,
-        limit: 1,
+        limit: 10,
         lower_bound: res.rows[res.rows.length - 1].scope + 1
       })
       accts = accts.concat(res.rows)
@@ -401,5 +492,7 @@ module.exports = {
   stakesByDelegate,
   currencyStats,
   wallet,
-  pendingClaim
+  pendingClaim,
+  allPowerStats,
+  allStakesAsync
 }
