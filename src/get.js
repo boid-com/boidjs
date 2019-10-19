@@ -27,6 +27,10 @@ async function pendingClaim (account, wallet) {
     console.log('must first have a power row entry')
     return { stake: 0, power: 0, wpf: 0 }
   }
+  bonus.stake = parseFloat(bonus.stake.toFixed(4))
+  bonus.power = parseFloat(bonus.power.toFixed(4))
+  bonus.wpf = parseFloat(bonus.wpf.toFixed(4))
+
   return bonus
 }
 

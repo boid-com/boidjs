@@ -36,12 +36,14 @@ function getCurrentBoidpower ({
         BigNumber(parseFloat(config.boidpower_const_decay))
       )
     )
+    // console.log(quantity.toString())
 
   quantity = BigNumber.maximum(quantity, 0)
     .plus(
       bpNew.multipliedBy(
-        BigNumber(config.boidpower_update_mult))
+        BigNumber(config.boidpower_update_exp))
     )
+  // console.log(quantity.toString())
 
   return quantity
 }
