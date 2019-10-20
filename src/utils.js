@@ -28,15 +28,15 @@ function getCurrentBoidpower ({
     bpPrev.multipliedBy((BigNumber(1.0).minus(
       BigNumber(parseFloat(config.boidpower_decay_rate))))
       .exponentiatedBy(dtReal))
-    .minus(
-      dtReal
-      .dividedBy(DAY_MICROSEC)
-      .multipliedBy(TIME_MULT)
-      .multipliedBy(
-        BigNumber(parseFloat(config.boidpower_const_decay))
+      .minus(
+        dtReal
+          .dividedBy(DAY_MICROSEC)
+          .multipliedBy(TIME_MULT)
+          .multipliedBy(
+            BigNumber(parseFloat(config.boidpower_const_decay))
+          )
       )
-    )
-    // console.log(quantity.toString())
+  // console.log(quantity.toString())
 
   quantity = BigNumber.maximum(quantity, 0)
     .plus(
@@ -55,12 +55,12 @@ function getPoweredStake ({
   return BigNumber.minimum(
     BigNumber(
       parseFloat(config.powered_stake_multiplier))
-    .multipliedBy(BigNumber(power)),
+      .multipliedBy(BigNumber(power)),
     BigNumber(
       parseFloat(config.max_powered_stake_ratio))
-    .multipliedBy(
-      BigNumber(parseFloat(config.total_staked))
-    )
+      .multipliedBy(
+        BigNumber(parseFloat(config.total_staked))
+      )
   )
 }
 
@@ -93,11 +93,11 @@ function getStakeBonus ({
 
   const stakeCoef =
     BigNumber(claimTime).minus(startTime)
-    .multipliedBy(
-      TIME_MULT
-      .dividedBy(stakeDifficulty)
-      .dividedBy(PRECISION_COEF)
-    )
+      .multipliedBy(
+        TIME_MULT
+          .dividedBy(stakeDifficulty)
+          .dividedBy(PRECISION_COEF)
+      )
 
   return {
     stake: amount.multipliedBy(stakeCoef),
@@ -245,7 +245,7 @@ function getBonus ({
       totalPayout.wpf = totalPayout.wpf.plus(currPayout.wpf)
       poweredStake = BigNumber.maximum(
         BigNumber(poweredStake)
-        .minus(currStake.trans_quantity),
+          .minus(currStake.trans_quantity),
         0
       )
     }
@@ -338,6 +338,67 @@ function simulatePowerBonus ({
   return totalPayout
 }
 
+async function getRows ({code,scope,table,rpc}) {
+  try {
+    const res = await rpc.get_table_rows({
+      json: true,
+      code,
+      scope,
+      table,
+      limit: 10000
+    })
+    return res.rows
+  } catch (error) {
+    console.error(error)
+    throw (error)
+  }
+}
+
+async function getTable ({ code, table, group, rpc, emitter }) {
+  let chunkSize = 10000
+  let res = { more: true, rows: [{ scope: 0 }] }
+  try {
+    let accts = []
+    let thisChunk = []
+    let fullList = []
+    while (res.more !== '' && res.more !== false && res.rows[0]) {
+      res = await rpc.get_table_by_scope({
+        json: true,
+        code,
+        table,
+        limit: chunkSize,
+        // limit: 1,
+        lower_bound: res.rows[res.rows.length - 1].scope + 1
+      })
+      console.log(res.more,res.rows.length)
+      accts = accts.concat(res.rows)
+      thisChunk = []
+      for (account of res.rows) {
+        const rows = await getRows({code,scope:account.scope,table,rpc})
+        if (!group) {
+          for (row of rows) {
+            thisChunk.push(row)
+            if (emitter) emitter.emit('data', row)
+          }
+        }
+        else {
+          thisChunk.push(rows)
+          if (emitter) emitter.emit('data', rows)
+        }
+
+      }
+      if (emitter) emitter.emit('chunk', thisChunk)
+      thisChunk.forEach(el => fullList.push(el))
+    }
+    if (emitter) emitter.emit('fullList',fullList)
+    return fullList
+  } catch (error) {
+    console.error(res)
+    console.error(error)
+    return undefined
+  }
+}
+
 module.exports = {
   num2boid,
   boid2num,
@@ -347,5 +408,7 @@ module.exports = {
   simulateStakeBonus,
   simulatePowerBonus,
   random,
-  randomSelect
+  randomSelect,
+  getTable,
+  getRows
 }
