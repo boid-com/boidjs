@@ -21,6 +21,6 @@
     "node-fetch": "^2.6.0"
   },
   "dependencies": {
-    "bignumber.js": "git+https://git@github.com/MikeMcl/bignumber.js.git"
+    "bignumber.js": "^9.0.0"
   }
 }
