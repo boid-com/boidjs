@@ -338,7 +338,7 @@ function simulatePowerBonus ({
   return totalPayout
 }
 
-async function getRows ({code,scope,table,rpc}) {
+async function getRows ({ code, scope, table, rpc }) {
   try {
     const res = await rpc.get_table_rows({
       json: true,
@@ -355,12 +355,12 @@ async function getRows ({code,scope,table,rpc}) {
 }
 
 async function getTable ({ code, table, group, rpc, emitter }) {
-  let chunkSize = 10000
+  const chunkSize = 10000
   let res = { more: true, rows: [{ scope: 0 }] }
   try {
     let accts = []
     let thisChunk = []
-    let fullList = []
+    const fullList = []
     while (res.more !== '' && res.more !== false && res.rows[0]) {
       res = await rpc.get_table_by_scope({
         json: true,
@@ -370,27 +370,25 @@ async function getTable ({ code, table, group, rpc, emitter }) {
         // limit: 1,
         lower_bound: res.rows[res.rows.length - 1].scope + 1
       })
-      console.log(res.more,res.rows.length)
+      console.log(res.more, res.rows.length)
       accts = accts.concat(res.rows)
       thisChunk = []
       for (account of res.rows) {
-        const rows = await getRows({code,scope:account.scope,table,rpc})
+        const rows = await getRows({ code, scope: account.scope, table, rpc })
         if (!group) {
           for (row of rows) {
             thisChunk.push(row)
             if (emitter) emitter.emit('data', row)
           }
-        }
-        else {
+        } else {
           thisChunk.push(rows)
           if (emitter) emitter.emit('data', rows)
         }
-
       }
       if (emitter) emitter.emit('chunk', thisChunk)
       thisChunk.forEach(el => fullList.push(el))
     }
-    if (emitter) emitter.emit('fullList',fullList)
+    if (emitter) emitter.emit('fullList', fullList)
     return fullList
   } catch (error) {
     console.error(res)

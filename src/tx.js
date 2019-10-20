@@ -23,13 +23,10 @@ const tapos =
 }
 
 function claim (auth, data) {
-  if (!data) data = 0
-  return maketx({
-    account,
-    name: 'claim',
-    auth,
-    data: { stake_account: auth.accountName, percentage_to_stake: data, issuer_claim: false }
-  })
+  const defaultData = { stake_account: auth.accountName, percentage_to_stake: 0, issuer_claim: false }
+  if (data) data = Object.assign(defaultData, data)
+  else data = defaultData
+  return maketx({ account, name: 'claim', auth, data })
 }
 
 function selfStake (auth, data) {
