@@ -1,8 +1,7 @@
 var rpc = global.boidjs.rpc
 const utils = require('./utils')
 var contract = 'boidcomtoken'
-var events = require('events')
-
+var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4)) 
 
 async function pendingClaim (wallet, config) {
@@ -189,7 +188,7 @@ async function stakes (account) {
 
 function setupTableParser (table, { group, async, chunkSize }) {
   var emitter
-  if (async) emitter = new events.EventEmitter()
+  if (async) emitter = new EventEmitter()
   const result = utils.getTable({ code: contract, table, group, rpc, chunkSize, emitter })
   if (async) return emitter
   else return result
