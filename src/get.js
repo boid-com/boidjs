@@ -3,40 +3,32 @@ const utils = require('./utils')
 var contract = 'boidcomtoken'
 var events = require('events')
 
-async function pendingClaim (account, wallet) {
-  var power
-  var acctStakes
-  if (wallet) {
-    power = wallet.powerStats
-    acctStakes = wallet.stakes
-  } else {
-    power = await powerStats(account)
-    acctStakes = await stakes(account)
-  }
-  const config = await stakeConfig()
-  const t = await time() * 1e6
-  let bonus
+const parseBN = (bignum) => parseFloat(bignum.toFixed(4)) 
 
-  if (power) {
-    bonus = utils.getBonus({
-      config,
-      stakes: acctStakes,
-      power,
-      t
-    })
-  } else {
-    console.log('must first have a power row entry')
-    return { stake: 0, power: 0, wpf: 0 }
+async function pendingClaim (wallet, config) {
+  if (!wallet) throw('must include user wallet for pendingClaim')
+  if (!config) config = await stakeConfig()
+  var pending = {stake:0,power:0,wpf:{stake:0,power:0,total:0}}
+  const ms = Date.now() - wallet.lastClaimTime
+  const power = wallet.totalPower
+  if (wallet.totalPower > 0) {
+    pending.power = parseBN(utils.simPowerBonus({config,power,ms}).power)
+    console.log('PENDING POWER PAYOUT:',pending.power)
   }
-  bonus.stake = parseFloat(bonus.stake.toFixed(4))
-  bonus.power = parseFloat(bonus.power.toFixed(4))
-  bonus.wpf = parseFloat(bonus.wpf.toFixed(4))
+  if (wallet.allStaked > 0) {
+    const result = (utils.simStakeBonus({config,power,quantity:wallet.allStaked,ms}))
+    pending.stake = parseBN(result.stake)
+    pending.wpf.stake = parseBN(result.wpf)
+    console.log('PENDING STAKE PAYOUT',pending)
+  }
+  pending.wpf.total = pending.wpf.stake + pending.wpf.power
 
-  return bonus
+  return pending
 }
 
 async function wallet (account) {
   var wallet = {
+    account,
     powerStats: {},
     balance: 0,
     stakes: [],
@@ -52,15 +44,21 @@ async function wallet (account) {
     totalDelegating: 0,
     totalTransDelegating: 0,
     allDelegating: 0,
-    liquidBalance: 0
+    liquidBalance: 0,
+    totalPower:0,
+    lastClaimTime:0
   }
 
   try {
-    wallet.balance = (await balance(account))
-    wallet.stakes = (await stakes(account))
-    wallet.powerStats = await powerStats(account)
+    [wallet.balance, wallet.stakes, wallet.powerStats, wallet.delegations ] = await Promise.all(
+      [balance(account), stakes(account), powerStats(account), delegations(account)] )
+    wallet.delegations = wallet.delegations.filter(el => el.to !== account)
+
+    const externalStakes = wallet.stakes.filter(el => el.from !== account)
+
     if (wallet.powerStats) {
-      wallet.powerStats.lastClaimTime = parseFloat(wallet.powerStats.prev_claim_time._count) / 10000
+      wallet.lastClaimTime = parseFloat(wallet.powerStats.prev_claim_time._count) / 1000
+      wallet.totalPower = parseFloat(wallet.powerStats.quantity)
     }
     const selfStake = wallet.stakes.find(el => el.from === account)
     if (selfStake) {
@@ -69,7 +67,6 @@ async function wallet (account) {
       wallet.allSelfStake = wallet.selfStake + wallet.selfTransStake
     }
 
-    const externalStakes = wallet.stakes.filter(el => el.from !== account)
     wallet.externalStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.quantity), 0)
     wallet.externalTransStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.trans_quantity), 0)
     wallet.totalStake = wallet.selfStake + wallet.externalStake
@@ -190,41 +187,32 @@ async function stakes (account) {
   }
 }
 
-async function allAccounts () {
-  
-}
-
-function setupTableParser(table,{group,async}) {
-  if (async) var emitter = new events.EventEmitter()
-  else var emitter = null
-  const result = utils.getTable({ code:contract, table , group, rpc, emitter })
+function setupTableParser (table, { group, async, chunkSize }) {
+  var emitter
+  if (async) emitter = new events.EventEmitter()
+  const result = utils.getTable({ code: contract, table, group, rpc, chunkSize, emitter })
   if (async) return emitter
   else return result
 }
 
-function allAccounts({group,async}) {
+function allAccounts ({ group, async, chunkSize }) {
   console.log('Retreiving all accounts...')
-  return setupTableParser('accounts',{group,async})
+  return setupTableParser('accounts', { group, async, chunkSize })
 }
 
-function allStakes({group,async}) {
+function allStakes ({ group, async, chunkSize }) {
   console.log('Retreiving all stakes...')
-  return setupTableParser('staked',{group,async})
+  return setupTableParser('staked', { group, async, chunkSize })
 }
 
-function allStakes({group,async}) {
-  console.log('Retreiving all stakes...')
-  return setupTableParser('staked',{group,async})
-}
-
-function allDelegations({group,async}) {
+function allDelegations ({ group, async, chunkSize }) {
   console.log('Retreiving all delegations...')
-  return setupTableParser('delegation',{group,async})
+  return setupTableParser('delegation', { group, async, chunkSize })
 }
 
-function allPowerStats({group,async}) {
+function allPowerStats ({ group, async, chunkSize }) {
   console.log('Retreiving all powerStats...')
-  return setupTableParser('powers',{group,async})
+  return setupTableParser('powers', { group, async, chunkSize })
 }
 
 async function powerStats (account) {
@@ -273,7 +261,6 @@ async function delegations (account) {
   }
 }
 
-
 async function currencyStats () {
   try {
     const res = await rpc.get_table_rows({
@@ -309,5 +296,5 @@ module.exports = {
   currencyStats,
   wallet,
   pendingClaim,
-  allPowerStats,
+  allPowerStats
 }

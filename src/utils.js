@@ -3,6 +3,15 @@ BigNumber.config({ POW_PRECISION: 100 })
 
 const random = (min, max) => Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) + Math.ceil(min)
 const randomSelect = (arr) => arr[random(0, arr.length - 1)]
+const sleep = ms => new Promise(res => setTimeout(res, ms))
+
+function chunk (arr, len) {
+  var chunks = []
+  var i = 0
+  var n = arr.length
+  while (i < n) { chunks.push(arr.slice(i, i += len)) }
+  return chunks
+}
 
 const TIME_MULT = BigNumber(1)// BigNumber(86400)
 const DAY_MICROSEC = BigNumber(86400e6)
@@ -36,14 +45,14 @@ function getCurrentBoidpower ({
             BigNumber(parseFloat(config.boidpower_const_decay))
           )
       )
-  // console.log(quantity.toString())
+  console.log(quantity.toString())
 
   quantity = BigNumber.maximum(quantity, 0)
     .plus(
       bpNew.multipliedBy(
-        BigNumber(config.boidpower_update_exp))
+        BigNumber(config.boidpower_update_mult))
     )
-  // console.log(quantity.toString())
+  console.log(quantity.toString())
 
   return quantity
 }
@@ -185,8 +194,8 @@ function getBonus ({
     config: config,
     power: currPower
   })
-  console.log('powered stake: ',
-    poweredStake.toFixed(5).toString()
+  console.log('max powered stake: ',
+    parseFloat(poweredStake.toFixed(4)).toLocaleString()
   )
 
   const totalPayout = {
@@ -271,23 +280,21 @@ function getBonus ({
   return totalPayout
 }
 
-function simulateStakeBonus ({
+function simStakeBonus ({
   config,
   power,
   quantity,
-  t,
-  dt
+  ms
 }) {
   var currPower = BigNumber(power)
-  var prevTime = BigNumber(t).minus(dt)
-  var expireTime = BigNumber(t).plus(1)
+  var ms = BigNumber(ms)
 
   var poweredStake = getPoweredStake({
     config: config,
     power: currPower
   })
   console.log('powered stake: ',
-    poweredStake.toString()
+    parseFloat(poweredStake.toFixed(4)).toLocaleString()
   )
 
   let totalPayout = {
@@ -300,47 +307,51 @@ function simulateStakeBonus ({
     totalPayout = claimForStake({
       quantity: quantity,
       poweredStake: poweredStake,
-      prevClaimTime: prevTime,
-      currTime: t,
-      expiration: expireTime,
+      prevClaimTime: BigNumber(1),
+      currTime: ms.times(1e3),
+      expiration: ms.times(1e9),
       stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty))
     })
-    console.log('simulated stake payout: ',
-      totalPayout.stake.toFixed(4).toString()
+    console.log('stake payout: ',
+      parseFloat(totalPayout.stake.toFixed(4)).toLocaleString()
     )
-    console.log('simulated stake wpf payout: ',
-      totalPayout.wpf.toFixed(4).toString()
+    console.log('stake wpf payout: ',
+      parseFloat(totalPayout.wpf.toFixed(4)).toLocaleString()
     )
   }
   return totalPayout
 }
 
-function simulatePowerBonus ({
+function simPowerBonus ({
   config,
   power,
-  t,
-  dt
+  ms
 }) {
   var currPower = BigNumber(power)
-  var prevTime = BigNumber(t).minus(dt)
-
-  const totalPayout = getPowerBonus({
+  ms = BigNumber(ms)
+    const totalPayout = getPowerBonus({
     power: currPower,
     powerDifficulty: BigNumber(parseFloat(config.power_difficulty)),
     powerBonusMaxRate: BigNumber(parseFloat(config.power_bonus_max_rate)),
-    startTime: prevTime,
-    claimTime: t
+    startTime: 0,
+    claimTime: ms * 1e3
   })
   console.log('simulated power payout: ',
-    totalPayout.power.toFixed(4).toString()
+    parseFloat(totalPayout.power.toFixed(4)).toLocaleString()
   )
 
   return totalPayout
 }
 
+function simPendingClaim({wallet,config,ms}) {
+  const stake = simStakeBonus()
+}
+
+
 async function getRows ({ code, scope, table, rpc }) {
+  var res
   try {
-    const res = await rpc.get_table_rows({
+    res = await rpc.get_table_rows({
       json: true,
       code,
       scope,
@@ -349,49 +360,70 @@ async function getRows ({ code, scope, table, rpc }) {
     })
     return res.rows
   } catch (error) {
-    console.error(error)
-    throw (error)
+    console.error(error.message)
+    console.log('Running query again...')
+    return getRows({ code, scope, table, rpc })
+    // throw (error)
   }
 }
 
-async function getTable ({ code, table, group, rpc, emitter }) {
-  const chunkSize = 10000
+async function getTable ({ code, table, group, rpc, chunkSize, emitter }) {
+  if (!chunkSize) chunkSize = 3
   let res = { more: true, rows: [{ scope: 0 }] }
   try {
-    let accts = []
-    let thisChunk = []
     const fullList = []
-    while (res.more !== '' && res.more !== false && res.rows[0]) {
+    while (res.more !== '' && res.more !== false) {
+      if (res.rows[0]) {
+        var lowerBound = res.rows[res.rows.length - 1].scope
+        console.log(lowerBound)
+      } else {
+        console.log(res)
+        console.log(lowerBound)
+      }
       res = await rpc.get_table_by_scope({
         json: true,
         code,
         table,
-        limit: chunkSize,
+        limit: 999999999,
         // limit: 1,
-        lower_bound: res.rows[res.rows.length - 1].scope + 1
+        lower_bound: lowerBound
       })
       console.log(res.more, res.rows.length)
-      accts = accts.concat(res.rows)
-      thisChunk = []
-      for (account of res.rows) {
-        const rows = await getRows({ code, scope: account.scope, table, rpc })
-        if (!group) {
-          for (row of rows) {
-            thisChunk.push(row)
-            if (emitter) emitter.emit('data', row)
+      res.rows.shift()
+      const chunks = chunk(res.rows, chunkSize)
+      const handleRows = async function (account,i) {
+        try {
+          // console.log('sleeping....',i*2)
+          await sleep(i*2)
+          var results = []
+          const rows = await getRows({ code, scope: account.scope, table, rpc })
+          if (!rows) return handleRows(account)
+          if (!group) {
+            for (const row of rows) {
+              results.push(row)
+              if (emitter) emitter.emit('data', row)
+            }
+          } else {
+            results.push(rows)
+            if (emitter) emitter.emit('data', rows)
           }
-        } else {
-          thisChunk.push(rows)
-          if (emitter) emitter.emit('data', rows)
+          return results
+        } catch (error) {
+          console.error(error)
+          return results
         }
       }
-      if (emitter) emitter.emit('chunk', thisChunk)
-      thisChunk.forEach(el => fullList.push(el))
+      for (const iChunk of chunks) {
+        const results = (await Promise.all(iChunk.map((account,i) => handleRows(account,i)))).flat()
+        if (emitter) emitter.emit('chunk', results)
+        results.forEach(el => fullList.push(el))
+      }
+
     }
-    if (emitter) emitter.emit('fullList', fullList)
+    if (emitter) emitter.emit('finished', true)
     return fullList
   } catch (error) {
-    console.error(res)
+    // console.error(res)
     console.error(error)
     return undefined
   }
@@ -403,10 +435,11 @@ module.exports = {
   getCurrentBoidpower,
   getPoweredStake,
   getBonus,
-  simulateStakeBonus,
-  simulatePowerBonus,
+  simStakeBonus,
   random,
   randomSelect,
   getTable,
-  getRows
+  getRows,
+  sleep,
+  simPowerBonus
 }
