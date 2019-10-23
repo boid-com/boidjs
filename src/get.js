@@ -194,24 +194,24 @@ function setupTableParser (table, { group, async, chunkSize }) {
   else return result
 }
 
-function allAccounts ({ group, async, chunkSize }) {
+function allAccounts (data) {
   console.log('Retreiving all accounts...')
-  return setupTableParser('accounts', { group, async, chunkSize })
+  return setupTableParser('accounts', data)
 }
 
-function allStakes ({ group, async, chunkSize }) {
+function allStakes (data) {
   console.log('Retreiving all stakes...')
-  return setupTableParser('staked', { group, async, chunkSize })
+  return setupTableParser('staked', data)
 }
 
-function allDelegations ({ group, async, chunkSize }) {
+function allDelegations (data) {
   console.log('Retreiving all delegations...')
-  return setupTableParser('delegation', { group, async, chunkSize })
+  return setupTableParser('delegation', data)
 }
 
-function allPowerStats ({ group, async, chunkSize }) {
+function allPowerStats (data) {
   console.log('Retreiving all powerStats...')
-  return setupTableParser('powers', { group, async, chunkSize })
+  return setupTableParser('powers', data)
 }
 
 async function powerStats (account) {
