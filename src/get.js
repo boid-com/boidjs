@@ -1,5 +1,6 @@
 var rpc = global.boidjs.rpc
 const utils = require('./utils')
+const sleep = async () => utils.sleep(utils.random(50,500))
 var contract = 'boidcomtoken'
 var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4)) 
@@ -89,8 +90,7 @@ async function wallet (account) {
 
 async function time () {
   try {
-    const res = await rpc.get_info()
-    return ((new Date(res.head_block_time)).getTime()) / 1000
+    return Date.now()
   } catch (error) {
     return undefined
   }
@@ -110,7 +110,9 @@ async function stats () {
     })
     return res.rows[0]
   } catch (error) {
-    return undefined
+    console.error(error)
+    await sleep(1000)
+    return stats()
   }
 }
 
@@ -129,7 +131,8 @@ async function stakeConfig () {
     return res.rows[0]
   } catch (error) {
     console.error(error)
-    return undefined
+    await sleep(1000)
+    return stakeConfig()
   }
 }
 
@@ -149,7 +152,8 @@ async function balance (account) {
     return parseFloat(res.rows[0].balance)
   } catch (error) {
     console.log(error)
-    return undefined
+    await sleep(1000)
+    return balance(account)
   }
 }
 
@@ -166,7 +170,8 @@ async function stake (to, from) {
     return res.rows[0]
   } catch (error) {
     console.log(error)
-    return undefined
+    await sleep(1000)
+    return stake(to, from)
   }
 }
 
@@ -178,11 +183,13 @@ async function stakes (account) {
       scope: account,
       table: 'staked',
       limit: 10000
-    })
+    }).catch(err => {throw(err)})
     return res.rows
   } catch (error) {
+    console.log('THROWN STAKES')
     console.error(error)
-    throw (error)
+    await sleep(1000)
+    return stakes(account)
   }
 }
 
@@ -225,7 +232,9 @@ async function powerStats (account) {
     })
     return res.rows[0]
   } catch (error) {
-    return undefined
+    console.error(error)
+    await sleep(1000)
+    return powerStats(account)
   }
 }
 
@@ -241,7 +250,9 @@ async function delegation (from, to) {
     })
     return res.rows[0]
   } catch (error) {
-    return undefined
+    console.error(error)
+    await sleep(1000)
+    return delegation(account)
   }
 }
 
@@ -256,7 +267,9 @@ async function delegations (account) {
     })
     return res.rows
   } catch (error) {
-    return undefined
+    console.error(error)
+    await sleep(1000)
+    return delegations(account)
   }
 }
 
@@ -275,7 +288,8 @@ async function currencyStats () {
     return res.rows[0]
   } catch (error) {
     console.error(error)
-    return undefined
+    await sleep(1000)
+    return currencyStats(account)
   }
 }
 
