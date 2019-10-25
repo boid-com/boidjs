@@ -90,7 +90,7 @@ async function accountStake (account) {
   var wallet = {}
   try {
     [ wallet.stakes ] = await Promise.all([ stakes(account)])
-    if (!wallet.stakes) return false
+    if (!wallet.stakes || wallet.stakes.length === 0) return false 
     const externalStakes = wallet.stakes.filter(el => el.from !== account)
     const selfStake = wallet.stakes.find(el => el.from === account)
 
