@@ -1,25 +1,23 @@
 var rpc = global.boidjs.rpc
 const utils = require('./utils')
-const sleep = async () => utils.sleep(utils.random(50,500))
+const sleep = async () => utils.sleep(utils.random(50, 500))
 var contract = 'boidcomtoken'
 var EventEmitter = require('events')
-const parseBN = (bignum) => parseFloat(bignum.toFixed(4)) 
+const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
 
 async function pendingClaim (wallet, config) {
-  if (!wallet) throw('must include user wallet for pendingClaim')
+  if (!wallet) throw ('must include user wallet for pendingClaim')
   if (!config) config = await stakeConfig()
-  var pending = {stake:0,power:0,wpf:{stake:0,power:0,total:0}}
+  var pending = { stake: 0, power: 0, wpf: { stake: 0, power: 0, total: 0 } }
   const ms = Date.now() - wallet.lastClaimTime
   const power = wallet.totalPower
   if (wallet.totalPower > 0) {
-    pending.power = parseBN(utils.simPowerBonus({config,power,ms}).power)
-    console.log('PENDING POWER PAYOUT:',pending.power)
+    pending.power = parseBN(utils.simPowerBonus({ config, power, ms }).power)
   }
   if (wallet.allStaked > 0) {
-    const result = (utils.simStakeBonus({config,power,quantity:wallet.allStaked,ms}))
+    const result = (utils.simStakeBonus({ config, power, quantity: wallet.allStaked, ms }))
     pending.stake = parseBN(result.stake)
     pending.wpf.stake = parseBN(result.wpf)
-    console.log('PENDING STAKE PAYOUT',pending)
   }
   pending.wpf.total = pending.wpf.stake + pending.wpf.power
 
@@ -45,13 +43,13 @@ async function wallet (account) {
     totalTransDelegating: 0,
     allDelegating: 0,
     liquidBalance: 0,
-    totalPower:0,
-    lastClaimTime:0
+    totalPower: 0,
+    lastClaimTime: 0
   }
 
   try {
-    [wallet.balance, wallet.stakes, wallet.powerStats, wallet.delegations ] = await Promise.all(
-      [balance(account), stakes(account), powerStats(account), delegations(account)] )
+    [wallet.balance, wallet.stakes, wallet.powerStats, wallet.delegations] = await Promise.all(
+      [balance(account), stakes(account), powerStats(account), delegations(account)])
     wallet.delegations = wallet.delegations.filter(el => el.to !== account)
 
     const externalStakes = wallet.stakes.filter(el => el.from !== account)
@@ -183,7 +181,7 @@ async function stakes (account) {
       scope: account,
       table: 'staked',
       limit: 10000
-    }).catch(err => {throw(err)})
+    }).catch(err => { throw (err) })
     return res.rows
   } catch (error) {
     console.log('THROWN STAKES')
@@ -252,7 +250,7 @@ async function delegation (from, to) {
   } catch (error) {
     console.error(error)
     await sleep(1000)
-    return delegation(account)
+    return delegation(from,to)
   }
 }
 
@@ -289,7 +287,7 @@ async function currencyStats () {
   } catch (error) {
     console.error(error)
     await sleep(1000)
-    return currencyStats(account)
+    return currencyStats()
   }
 }
 

@@ -4,6 +4,7 @@ BigNumber.config({ POW_PRECISION: 100 })
 const random = (min, max) => Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) + Math.ceil(min)
 const randomSelect = (arr) => arr[random(0, arr.length - 1)]
 const sleep = ms => new Promise(res => setTimeout(res, ms))
+const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
 
 function chunk (arr, len) {
   var chunks = []
@@ -194,9 +195,6 @@ function getBonus ({
     config: config,
     power: currPower
   })
-  console.log('max powered stake: ',
-    parseFloat(poweredStake.toFixed(4)).toLocaleString()
-  )
 
   const totalPayout = {
     stake: BigNumber(0),
@@ -222,9 +220,6 @@ function getBonus ({
       })
       console.log('stake payout: ',
         currPayout.stake.toFixed(4).toString()
-      )
-      console.log('stake wpf payout: ',
-        currPayout.wpf.toFixed(4).toString()
       )
 
       totalPayout.stake = totalPayout.stake.plus(currPayout.stake)
@@ -293,7 +288,7 @@ function simStakeBonus ({
     config: config,
     power: currPower
   })
-  console.log('powered stake: ',
+  console.log('max powered stake: ',
     parseFloat(poweredStake.toFixed(4)).toLocaleString()
   )
 
@@ -312,12 +307,12 @@ function simStakeBonus ({
       expiration: ms.times(1e9),
       stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty))
     })
-    console.log('stake payout: ',
-      parseFloat(totalPayout.stake.toFixed(4)).toLocaleString()
-    )
-    console.log('stake wpf payout: ',
-      parseFloat(totalPayout.wpf.toFixed(4)).toLocaleString()
-    )
+    // console.log('stake payout: ',
+    //   parseFloat(totalPayout.stake.toFixed(4)).toLocaleString()
+    // )
+    // console.log('stake wpf payout: ',
+    //   parseFloat(totalPayout.wpf.toFixed(4)).toLocaleString()
+    // )
   }
   return totalPayout
 }
@@ -329,24 +324,19 @@ function simPowerBonus ({
 }) {
   var currPower = BigNumber(power)
   ms = BigNumber(ms)
-    const totalPayout = getPowerBonus({
+  const totalPayout = getPowerBonus({
     power: currPower,
     powerDifficulty: BigNumber(parseFloat(config.power_difficulty)),
     powerBonusMaxRate: BigNumber(parseFloat(config.power_bonus_max_rate)),
     startTime: 0,
     claimTime: ms * 1e3
   })
-  console.log('simulated power payout: ',
-    parseFloat(totalPayout.power.toFixed(4)).toLocaleString()
-  )
-
   return totalPayout
 }
 
-function simPendingClaim({wallet,config,ms}) {
+function simPendingClaim ({ wallet, config, ms }) {
   const stake = simStakeBonus()
 }
-
 
 async function getRows ({ code, scope, table, rpc }) {
   var res
@@ -391,10 +381,10 @@ async function getTable ({ code, table, group, rpc, chunkSize, emitter }) {
       console.log(res.more, res.rows.length)
       res.rows.shift()
       const chunks = chunk(res.rows, chunkSize)
-      const handleRows = async function (account,i) {
+      const handleRows = async function (account, i) {
         try {
           // console.log('sleeping....',i*2)
-          await sleep(i*2)
+          await sleep(i * 2)
           var results = []
           const rows = await getRows({ code, scope: account.scope, table, rpc })
           if (!rows) return handleRows(account)
@@ -414,11 +404,10 @@ async function getTable ({ code, table, group, rpc, chunkSize, emitter }) {
         }
       }
       for (const iChunk of chunks) {
-        const results = (await Promise.all(iChunk.map((account,i) => handleRows(account,i)))).flat()
+        const results = (await Promise.all(iChunk.map((account, i) => handleRows(account, i)))).flat()
         if (emitter) emitter.emit('chunk', results)
         results.forEach(el => fullList.push(el))
       }
-
     }
     if (emitter) emitter.emit('finished', true)
     return fullList
