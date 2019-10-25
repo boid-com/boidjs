@@ -86,6 +86,34 @@ async function wallet (account) {
   }
 }
 
+async function accountStake (account) {
+  var wallet = {}
+  try {
+    [ wallet.stakes ] = await Promise.all([ stakes(account)])
+    if (!wallet.stakes) return false
+    const externalStakes = wallet.stakes.filter(el => el.from !== account)
+    const selfStake = wallet.stakes.find(el => el.from === account)
+
+    if (selfStake) {
+      wallet.selfStake = parseFloat(selfStake.quantity)
+      wallet.selfTransStake = parseFloat(selfStake.trans_quantity)
+      wallet.allSelfStake = wallet.selfStake + wallet.selfTransStake
+    }
+
+    wallet.externalStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.quantity), 0)
+    wallet.externalTransStake = externalStakes.reduce((acc, el) => acc + parseFloat(el.trans_quantity), 0)
+    wallet.totalStake = wallet.selfStake + wallet.externalStake
+    wallet.totalTransStake = wallet.selfTransStake + wallet.externalTransStake
+    wallet.allStaked = wallet.totalStake + wallet.totalTransStake
+
+    return wallet
+  } catch (error) {
+    console.error(error.message)
+    return false
+  }
+
+}
+
 async function time () {
   try {
     return Date.now()
@@ -307,5 +335,6 @@ module.exports = {
   currencyStats,
   wallet,
   pendingClaim,
-  allPowerStats
+  allPowerStats,
+  accountStake
 }
