@@ -5,25 +5,29 @@ var contract = 'boidcomtoken'
 var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
 
-async function pendingClaim (wallet, config) {
+function pendingClaim (wallet, config) {
   if (!wallet) throw('must include user wallet for pendingClaim')
-  if (!config) config = await stakeConfig()
   var pending = { stake: 0, power: 0, maxPoweredStake:0, wpf: { stake: 0, power: 0, total: 0 } }
-  const ms = Date.now() - wallet.lastClaimTime
-  const power = wallet.totalPower
-  if (wallet.totalPower > 0) {
-    const result = utils.simPowerBonus({ config, power, ms })
-    pending.power = parseBN(result.power)
-  }
-  if (wallet.allStaked > 0) {
-    const result = (utils.simStakeBonus({ config, power, quantity: wallet.allStaked, ms }))
-    pending.stake = parseBN(result.stake)
-    pending.maxPoweredStake = parseBN(result.poweredStake)
-    pending.wpf.stake = parseBN(result.wpf)
-  }
-  pending.wpf.total = pending.wpf.stake + pending.wpf.power
 
-  return pending
+  const next = (config) => {
+    const ms = Date.now() - wallet.lastClaimTime
+    const power = wallet.totalPower
+    if (wallet.totalPower > 0) {
+      const result = utils.simPowerBonus({ config, power, ms })
+      pending.power = parseBN(result.power)
+    }
+    if (wallet.allStaked > 0) {
+      const result = (utils.simStakeBonus({ config, power, quantity: wallet.allStaked, ms }))
+      pending.stake = parseBN(result.stake)
+      pending.maxPoweredStake = parseBN(result.poweredStake)
+      pending.wpf.stake = parseBN(result.wpf)
+    }
+    pending.wpf.total = pending.wpf.stake + pending.wpf.power
+    return pending
+  }
+
+  if (!config) return stakeConfig().then(next)
+  else return next(config)
 }
 
 async function wallet (account) {
