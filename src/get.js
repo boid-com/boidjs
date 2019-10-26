@@ -2,6 +2,7 @@ var rpc = global.boidjs.rpc
 const utils = require('./utils')
 const sleep = async () => utils.sleep(utils.random(50, 500))
 var contract = 'boidcomtoken'
+var powercontract = 'boidcompower'
 var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
 
@@ -224,32 +225,37 @@ async function stakes (account) {
   }
 }
 
-function setupTableParser (table, { group, async, chunkSize }) {
+function setupTableParser (code, table, { group, async, chunkSize }) {
   var emitter
   if (async) emitter = new EventEmitter()
-  const result = utils.getTable({ code: contract, table, group, rpc, chunkSize, emitter })
+  const result = utils.getTable({ code: code, table, group, rpc, chunkSize, emitter })
   if (async) return emitter
   else return result
 }
 
 function allAccounts (data) {
   console.log('Retreiving all accounts...')
-  return setupTableParser('accounts', data)
+  return setupTableParser(contract, 'accounts', data)
 }
 
 function allStakes (data) {
   console.log('Retreiving all stakes...')
-  return setupTableParser('staked', data)
+  return setupTableParser(contract, 'staked', data)
 }
 
 function allDelegations (data) {
   console.log('Retreiving all delegations...')
-  return setupTableParser('delegation', data)
+  return setupTableParser(contract, 'delegation', data)
 }
 
 function allPowerStats (data) {
   console.log('Retreiving all powerStats...')
-  return setupTableParser('powers', data)
+  return setupTableParser(contract, 'powers', data)
+}
+
+function allDevices (data) {
+  console.log('Retrieving all devices...')
+  return setupTableParser(powercontract, 'devices', data)
 }
 
 async function powerStats (account) {
@@ -324,6 +330,40 @@ async function currencyStats () {
   }
 }
 
+async function devices (protocol) {
+  try {
+    const res = await rpc.get_table_rows({
+      json: true,
+      code: powercontract,
+      scope: protocol,
+      table: 'devices',
+      limit: 10000
+    })
+    return res.rows
+  } catch (error) {
+    console.error(error)
+    await sleep(1000)
+    return devices(protocol)
+  }
+}
+
+async function protocols () {
+  try {
+    const res = await rpc.get_table_rows({
+      json: true,
+      code: powercontract,
+      scope: powercontract,
+      table: 'protocols',
+      limit: 10000
+    })
+    return res.rows
+  } catch (error) {
+    console.error(error)
+    await sleep(1000)
+    return protocols()
+  }
+}
+
 module.exports = {
   time,
   stats,
@@ -341,5 +381,8 @@ module.exports = {
   wallet,
   pendingClaim,
   allPowerStats,
-  accountStake
+  accountStake,
+  devices,
+  allDevices,
+  protocols,
 }
