@@ -295,7 +295,7 @@ function simStakeBonus ({
   let totalPayout = {
     stake: BigNumber(0),
     power: BigNumber(0),
-    wpf: BigNumber(0)
+    wpf: BigNumber(0),
   }
 
   if (quantity > 0) {
@@ -305,15 +305,10 @@ function simStakeBonus ({
       prevClaimTime: BigNumber(1),
       currTime: ms.times(1e3),
       expiration: ms.times(1e9),
-      stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty))
+      stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty)),
     })
-    // console.log('stake payout: ',
-    //   parseFloat(totalPayout.stake.toFixed(4)).toLocaleString()
-    // )
-    // console.log('stake wpf payout: ',
-    //   parseFloat(totalPayout.wpf.toFixed(4)).toLocaleString()
-    // )
   }
+  totalPayout.poweredStake = poweredStake
   return totalPayout
 }
 
@@ -430,5 +425,6 @@ module.exports = {
   getTable,
   getRows,
   sleep,
-  simPowerBonus
+  simPowerBonus,
+  parseBN
 }

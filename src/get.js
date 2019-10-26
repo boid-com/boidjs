@@ -6,17 +6,19 @@ var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
 
 async function pendingClaim (wallet, config) {
-  if (!wallet) throw ('must include user wallet for pendingClaim')
+  if (!wallet) throw('must include user wallet for pendingClaim')
   if (!config) config = await stakeConfig()
-  var pending = { stake: 0, power: 0, wpf: { stake: 0, power: 0, total: 0 } }
+  var pending = { stake: 0, power: 0, maxPoweredStake:0, wpf: { stake: 0, power: 0, total: 0 } }
   const ms = Date.now() - wallet.lastClaimTime
   const power = wallet.totalPower
   if (wallet.totalPower > 0) {
-    pending.power = parseBN(utils.simPowerBonus({ config, power, ms }).power)
+    const result = utils.simPowerBonus({ config, power, ms })
+    pending.power = parseBN(result.power)
   }
   if (wallet.allStaked > 0) {
     const result = (utils.simStakeBonus({ config, power, quantity: wallet.allStaked, ms }))
     pending.stake = parseBN(result.stake)
+    pending.maxPoweredStake = parseBN(result.poweredStake)
     pending.wpf.stake = parseBN(result.wpf)
   }
   pending.wpf.total = pending.wpf.stake + pending.wpf.power
@@ -89,8 +91,8 @@ async function wallet (account) {
 async function accountStake (account) {
   var wallet = {}
   try {
-    [ wallet.stakes ] = await Promise.all([ stakes(account)])
-    if (!wallet.stakes || wallet.stakes.length === 0) return false 
+    [wallet.stakes] = await Promise.all([stakes(account)])
+    if (!wallet.stakes || wallet.stakes.length === 0) return false
     const externalStakes = wallet.stakes.filter(el => el.from !== account)
     const selfStake = wallet.stakes.find(el => el.from === account)
 
@@ -111,7 +113,6 @@ async function accountStake (account) {
     console.error(error.message)
     return false
   }
-
 }
 
 async function time () {
@@ -212,8 +213,8 @@ async function stakes (account) {
     }).catch(err => { throw (err) })
     return res.rows
   } catch (error) {
-    console.log('THROWN STAKES')
-    console.error(error)
+    console.error(error.message)
+    console.error('RETRYING QUERY...')
     await sleep(1000)
     return stakes(account)
   }
@@ -278,7 +279,7 @@ async function delegation (from, to) {
   } catch (error) {
     console.error(error)
     await sleep(1000)
-    return delegation(from,to)
+    return delegation(from, to)
   }
 }
 
