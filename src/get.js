@@ -1,6 +1,6 @@
 var rpc = global.boidjs.rpc
 const utils = require('./utils')
-const sleep = async () => utils.sleep(utils.random(50, 500))
+const sleep = () => utils.sleep(utils.random(50, 500))
 var contract = 'boidcomtoken'
 var powercontract = 'boidcompower'
 var EventEmitter = require('events')
@@ -225,37 +225,37 @@ async function stakes (account) {
   }
 }
 
-function setupTableParser (code, table, { group, async, chunkSize }) {
-  var emitter
-  if (async) emitter = new EventEmitter()
-  const result = utils.getTable({ code: code, table, group, rpc, chunkSize, emitter })
-  if (async) return emitter
+function setupTableParser (code, table, params) {
+  if (!params) params = {}
+  else if (params.events) params.events = new EventEmitter()
+  const result = utils.getTable({ code: code, table, group:params.group, rpc, chunkSize:params.chunkSize, emitter:params.events })
+  if (params.events) return params.events
   else return result
 }
 
-function allAccounts (data) {
+function allAccounts (params) {
   console.log('Retreiving all accounts...')
-  return setupTableParser(contract, 'accounts', data)
+  return setupTableParser(contract, 'accounts', params)
 }
 
-function allStakes (data) {
+function allStakes (params) {
   console.log('Retreiving all stakes...')
-  return setupTableParser(contract, 'staked', data)
+  return setupTableParser(contract, 'staked', params)
 }
 
-function allDelegations (data) {
+function allDelegations (params) {
   console.log('Retreiving all delegations...')
-  return setupTableParser(contract, 'delegation', data)
+  return setupTableParser(contract, 'delegation', params)
 }
 
-function allPowerStats (data) {
+function allPowerStats (params) {
   console.log('Retreiving all powerStats...')
-  return setupTableParser(contract, 'powers', data)
+  return setupTableParser(contract, 'powers', params)
 }
 
-function allDevices (data) {
+function allDevices (params) {
   console.log('Retrieving all devices...')
-  return setupTableParser(powercontract, 'devices', data)
+  return setupTableParser(powercontract, 'devices', params)
 }
 
 async function powerStats (account) {
@@ -330,7 +330,7 @@ async function currencyStats () {
   }
 }
 
-async function devices (protocol) {
+async function protocolDevices (protocol) {
   try {
     const res = await rpc.get_table_rows({
       json: true,
@@ -382,7 +382,7 @@ module.exports = {
   pendingClaim,
   allPowerStats,
   accountStake,
-  devices,
+  protocolDevices,
   allDevices,
   protocols,
 }
