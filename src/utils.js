@@ -295,7 +295,7 @@ function simStakeBonus ({
   let totalPayout = {
     stake: BigNumber(0),
     power: BigNumber(0),
-    wpf: BigNumber(0),
+    wpf: BigNumber(0)
   }
 
   if (quantity > 0) {
@@ -305,7 +305,7 @@ function simStakeBonus ({
       prevClaimTime: BigNumber(1),
       currTime: ms.times(1e3),
       expiration: ms.times(1e9),
-      stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty)),
+      stakeDifficulty: BigNumber(parseFloat(config.stake_difficulty))
     })
   }
   totalPayout.poweredStake = poweredStake
@@ -365,20 +365,12 @@ async function getTable ({ code, table, group, rpc, chunkSize, emitter }) {
         console.log(res)
         console.log(lowerBound)
       }
-      res = await rpc.get_table_by_scope({
-        json: true,
-        code,
-        table,
-        limit: 999999999,
-        // limit: 1,
-        lower_bound: lowerBound
-      })
+      res = await rpc.get_table_by_scope({ json: true, code, table, limit: 999999999, lower_bound: lowerBound })
       console.log(res.more, res.rows.length)
       res.rows.shift()
       const chunks = chunk(res.rows, chunkSize)
       const handleRows = async function (account, i) {
         try {
-          // console.log('sleeping....',i*2)
           await sleep(i * 2)
           var results = []
           const rows = await getRows({ code, scope: account.scope, table, rpc })

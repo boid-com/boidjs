@@ -7,8 +7,8 @@ var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
 
 function pendingClaim (wallet, config) {
-  if (!wallet) throw('must include user wallet for pendingClaim')
-  var pending = { stake: 0, power: 0, maxPoweredStake:0, wpf: { stake: 0, power: 0, total: 0 } }
+  if (!wallet) throw ('must include user wallet for pendingClaim')
+  var pending = { stake: 0, power: 0, maxPoweredStake: 0, wpf: { stake: 0, power: 0, total: 0 } }
 
   const next = (config) => {
     const ms = Date.now() - wallet.lastClaimTime
@@ -228,7 +228,7 @@ async function stakes (account) {
 function setupTableParser (code, table, params) {
   if (!params) params = {}
   else if (params.events) params.events = new EventEmitter()
-  const result = utils.getTable({ code: code, table, group:params.group, rpc, chunkSize:params.chunkSize, emitter:params.events })
+  const result = utils.getTable({ code: code, table, group: params.group, rpc, chunkSize: params.chunkSize, emitter: params.events })
   if (params.events) return params.events
   else return result
 }
@@ -384,5 +384,5 @@ module.exports = {
   accountStake,
   protocolDevices,
   allDevices,
-  protocols,
+  protocols
 }
