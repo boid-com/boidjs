@@ -1,5 +1,6 @@
 var rpc = global.boidjs.rpc
 const utils = require('./utils')
+const crypto = require('crypto')
 const sleep = async () => utils.sleep(utils.random(50, 500))
 var contract = 'boidcomtoken'
 var powercontract = 'boidcompower'
@@ -342,6 +343,26 @@ async function devices (protocol) {
   }
 }
 
+async function devicesByAccount (account, protocol) {
+  try {
+    const res = await rpc.get_table_rows({
+      json: true,
+      code: powercontract,
+      scope: protocol,
+      table: 'devices',
+      index_position: 'tertiary',
+      key_type: 'name',
+      lower_bound: account,
+      limit: 10000
+    })
+    return res.rows
+  } catch (error) {
+    console.error(error)
+    await sleep(1000)
+    return devices(protocol)
+  }
+}
+
 async function protocols () {
   try {
     const res = await rpc.get_table_rows({
@@ -378,6 +399,7 @@ module.exports = {
   allPowerStats,
   accountStake,
   devices,
+  devicesByAccount,
   allDevices,
   protocols,
 }
