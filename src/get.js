@@ -1,6 +1,5 @@
 var rpc = global.boidjs.rpc
 const utils = require('./utils')
-const crypto = require('crypto')
 const sleep = async () => utils.sleep(utils.random(50, 500))
 var contract = 'boidcomtoken'
 var powercontract = 'boidcompower'
