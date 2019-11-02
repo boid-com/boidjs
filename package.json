@@ -23,6 +23,5 @@
   },
   "dependencies": {
     "bignumber.js": "^9.0.0",
-    "crypto": "^1.0.1"
   }
 }
