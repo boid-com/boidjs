@@ -333,21 +333,42 @@ function simPendingClaim ({ wallet, config, ms }) {
   const stake = simStakeBonus()
 }
 
-async function getRows ({ code, scope, table, rpc }) {
+async function getRows ({ code, scope, table, rpc, keyName, lower_bound, prevResults }) {
   var res
+  if (!lower_bound) lower_bound = null
   try {
     res = await rpc.get_table_rows({
       json: true,
       code,
       scope,
       table,
-      limit: 10000
+      lower_bound,
+      limit: 99999999
     })
-    return res.rows
+    // return res.rows
+    // console.log(res.rows.length)
+    // console.log(res.rows[res.rows.length - 1][keyName])
+    if (!res.more || res.more === '') {
+      if (prevResults) {
+        prevResults.push(...res.rows)
+        return prevResults
+      } else return res.rows
+    }
+    else {
+      if (!prevResults) prevResults = []
+      res.rows.shift()
+      prevResults.push(...res.rows)
+      return getRows({code,scope,table,rpc,lower_bound:res.rows[res.rows.length - 1][keyName],prevResults,keyName})
+    }
   } catch (error) {
     console.error(error.message)
-    console.log('Running query again...')
-    return getRows({ code, scope, table, rpc })
+    await sleep(1000)
+    console.error('Running query again...')
+    var data = { code, scope, table, rpc}
+    if (keyName) data.keyname = keyName
+    if (lower_bound) data.lower_bound = lower_bound
+    if (prevResults) data.prevResults = prevResults
+    return getRows(data)
     // throw (error)
   }
 }

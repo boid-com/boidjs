@@ -1,10 +1,7 @@
 var account = 'boidcomtoken'
 function maketx (
   {
-    account,
-    name,
-    auth,
-    data
+    account, name, auth, data
   }
 ) {
   return {
