@@ -347,7 +347,7 @@ async function protocolDevices (protocol) {
   }
 }
 
-async function devicesByAccount (account, protocol) {
+async function accountDevices (account, protocol) {
   try {
     const res = await rpc.get_table_rows({
       json: true,
@@ -357,13 +357,14 @@ async function devicesByAccount (account, protocol) {
       index_position: 'tertiary',
       key_type: 'name',
       lower_bound: account,
+      upper_bound: account,
       limit: 10000
     })
     return res.rows
   } catch (error) {
     console.error(error)
     await sleep(1000)
-    return devices(protocol)
+    return accountDevices(account, protocol)
   }
 }
 
@@ -402,8 +403,8 @@ module.exports = {
   pendingClaim,
   allPowerStats,
   accountStake,
-  devices,
-  devicesByAccount,
+  protocolDevices,
+  accountDevices,
   allDevices,
   protocols
 }
