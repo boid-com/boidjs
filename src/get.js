@@ -170,18 +170,21 @@ async function stakeConfig () {
 
 async function balance (account) {
   try {
-    const res = await rpc.get_table_rows({
-      json: true,
-      code: contract,
-      scope: account,
-      table: 'accounts',
-      lower_bound: 'BOID',
-      limit: 1,
-      reverse: false,
-      show_payer: false
-    })
-    if (!res.rows[0]) return null
-    return parseFloat(res.rows[0].balance)
+    const res = await rpc.get_currency_balance(contract,String(account),'BOID')
+    if (res[0]) return parseFloat(res[0])
+    else return res[0]
+    // const res = await rpc.get_table_rows({
+    //   json: true,
+    //   code: contract,
+    //   scope: String(account),
+    //   table: 'accounts',
+    //   lower_bound: 'BOID',
+    //   limit: 1,
+    //   reverse: false,
+    //   show_payer: false
+    // })
+    // if (!res.rows[0]) return null
+    // return parseFloat(res.rows[0].balance)
   } catch (error) {
     console.log(error)
     await sleep(1000)
@@ -337,7 +340,7 @@ async function protocolDevices (protocol) {
       code: powercontract,
       scope: protocol,
       table: 'devices',
-      limit: 10000
+      limit: 10000000000
     })
     return res.rows
   } catch (error) {

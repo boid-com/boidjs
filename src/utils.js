@@ -353,18 +353,17 @@ async function getRows ({ code, scope, table, rpc, keyName, lower_bound, prevRes
         prevResults.push(...res.rows)
         return prevResults
       } else return res.rows
-    }
-    else {
+    } else {
       if (!prevResults) prevResults = []
       res.rows.shift()
       prevResults.push(...res.rows)
-      return getRows({code,scope,table,rpc,lower_bound:res.rows[res.rows.length - 1][keyName],prevResults,keyName})
+      return getRows({ code, scope, table, rpc, lower_bound: res.rows[res.rows.length - 1][keyName], prevResults, keyName })
     }
   } catch (error) {
     console.error(error.message)
     await sleep(1000)
     console.error('Running query again...')
-    var data = { code, scope, table, rpc}
+    var data = { code, scope, table, rpc }
     if (keyName) data.keyname = keyName
     if (lower_bound) data.lower_bound = lower_bound
     if (prevResults) data.prevResults = prevResults
