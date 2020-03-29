@@ -1,4 +1,7 @@
-var account = 'boidcomtoken'
+var contract
+if (global.boidtokencontract) contract = global.boidtokencontract
+else contract = 'boidcomtoken'
+
 function maketx (
   {
     account, name, auth, data

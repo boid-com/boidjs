@@ -319,6 +319,7 @@ function simPowerBonus ({
 }) {
   var currPower = BigNumber(power)
   ms = BigNumber(ms)
+  console.log('power_difficulty',BigNumber(parseFloat(config.power_difficulty)).toString())
   const totalPayout = getPowerBonus({
     power: currPower,
     powerDifficulty: BigNumber(parseFloat(config.power_difficulty)),
