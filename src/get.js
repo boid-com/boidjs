@@ -1,10 +1,10 @@
 var rpc = global.boidjs.rpc
 const utils = require('./utils')
 const sleep = () => utils.sleep(utils.random(50, 500))
-var contract
-if (global.boidtokencontract) contract = global.boidtokencontract
+var contract = global.boidjs.config.tokenContract
+if (global.boidjs.config) contract = global.boidtokencontract
 else contract = 'boidcomtoken'
-var powercontract = 'boidcompower'
+var powercontract = global.boidjs.config.powerContract
 var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
 
