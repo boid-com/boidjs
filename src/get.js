@@ -2,8 +2,6 @@ var rpc = global.boidjs.rpc
 const utils = require('./utils')
 const sleep = () => utils.sleep(utils.random(50, 500))
 var contract = global.boidjs.config.tokenContract
-if (global.boidjs.config) contract = global.boidtokencontract
-else contract = 'boidcomtoken'
 var powercontract = global.boidjs.config.powerContract
 var EventEmitter = require('events')
 const parseBN = (bignum) => parseFloat(bignum.toFixed(4))
@@ -171,6 +169,7 @@ async function stakeConfig () {
 }
 
 async function balance (account) {
+  console.log('boidjs get balance:',account)
   try {
     const res = await rpc.get_currency_balance(contract,String(account),'BOID')
     if (res[0]) return parseFloat(res[0])
