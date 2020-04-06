@@ -1,22 +1,14 @@
-function init ({ rpc, api,config }) {
-  global.boidjs = {}
-  global.boidjs.rpc = rpc
-  global.boidjs.api = api
-  
+function init ({ rpc, api, config }) {
   const defaultConfig = {
     tokenContract:'boidcomtoken',
     powerContract:'boidcompower'
   }
-  
-  if (config) {
-    global.boidjs.config = config
-  }else global.boidjs.config = {}
+  if (!config) config = defaultConfig
+  Object.assign(defaultConfig,config)
 
-  Object.assign(global.boidjs.config,defaultConfig)
-
-  const get = () => require('./get.js')
+  const get = ((data) => require('./get.js')(data))({rpc,api,config})
   const tx = () => require('./tx.js')
-  return { get:get(), tx:tx() }
+  return { get, tx:tx() }
 }
 
 module.exports = init
